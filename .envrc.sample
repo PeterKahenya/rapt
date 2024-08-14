@@ -1,0 +1,14 @@
+export MYSQL_DRIVER="mysql+pymysql"
+export MYSQL_HOST=""
+export MYSQL_PORT=
+export MYSQL_USER=""
+export MYSQL_PASSWORD=""
+export MYSQL_DATABASE=""
+export TEST_DATABASE_HOST="localhost"
+export TEST_DATABASE_PORT=3306
+export TEST_DATABASE_USER="rapt_user"
+export TEST_DATABASE_PASSWORD="of2mpLem"
+export TEST_DATABASE_NAME="raptdb_test"
+export SMSLEOPARD_API_KEY=""
+export SMSLEOPARD_API_SECRET=""
+export SMSLEOPARD_BASE_URL="https://api.smsleopard.com/v1/"
