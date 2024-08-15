@@ -1,9 +1,11 @@
 import pytest
+import sqlalchemy
 from sqlalchemy import create_engine,text
 from sqlalchemy.orm import sessionmaker
 from config import settings,TEST_DATABASE_URL
 from models import *
 from schemas import *
+import crud
 
 
 pytest_plugins = ('pytest_asyncio',)
@@ -108,3 +110,29 @@ def test_contenttype_schema(db):
     assert role_schema.description == role_get.description
     assert role_schema.permissions[0].name == role_get.permissions[0].name
     assert role_schema.permissions[1].name == role_get.permissions[1].name
+    
+    
+"""Test CRUD"""
+
+# test content_type permission role crud
+#test contenttype crud operations
+@pytest.mark.asyncio
+async def test_contenttype_crud(db):
+    #create contenttype
+    content_type_params = ContentTypeCreate(**{"content": "users"})
+    content_type_db =  await crud.create_obj(db,ContentType,content_type_params)
+    assert content_type_db in db
+    #read contenttype
+    content_type_get =  await crud.get_obj(db=db, model=ContentType,  id=content_type_db.id)
+    assert content_type_get == content_type_db
+    with pytest.raises(sqlalchemy.exc.NoResultFound) as e:
+        await crud.get_obj(db=db, model=ContentType,  id=uuid.uuid4())
+    content_types = await crud.get_objects_list(db=db,model=ContentType)
+    assert content_type_db in content_types
+    #update contenttype
+    content_type_update = ContentTypeUpdate(**{"content": "users1"})
+    content_type_db = await crud.update_obj(db=db,model=ContentType,id=content_type_db.id,schema_model=content_type_update)
+    assert content_type_db.content == "users1"
+    #delete contenttype
+    content_type_db = await crud.delete_obj(db=db,model=ContentType, id=content_type_db.id)
+    assert content_type_db not in db

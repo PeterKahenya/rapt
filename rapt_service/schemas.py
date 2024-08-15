@@ -20,6 +20,9 @@ class ModelInDBBase(ModelBase):
 class ContentTypeCreate(BaseModel):
     content: str
 
+class ContentTypeFilter(ContentTypeCreate):
+    pass
+
 class ContentTypeUpdate(ContentTypeCreate):
     pass
 
