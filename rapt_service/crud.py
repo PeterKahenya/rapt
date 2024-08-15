@@ -30,7 +30,7 @@ async def filter_objects(db: Session, model: models.Model, params: dict) -> List
 
 #update
 async def update_obj(db: Session, model: models.Model, id: UUID4, schema_model: BaseModel) -> models.Model:
-    logger.info(f"Updating content type with id: {id}")
+    logger.info(f"Updating {model.__tablename__} with id: {id}")
     obj = await get_obj(db=db, model=model,  id=id)
     db.execute(update(model).where(model.id == id).values(schema_model.model_dump()))
     db.commit()
@@ -44,4 +44,17 @@ async def delete_obj(db: Session, model: models.Model, id: UUID4, ) -> models.Mo
     db.execute(delete(model).where(model.id == obj.id))
     db.commit()
     return obj
+
+#update role
+async def update_role(db: Session, role_id: UUID4, role_update_data: schemas.RoleUpdate) -> models.Role:
+    logger.info(f"Updating role with id: {role_id}")
+    role = await get_obj(db=db, model=models.Role,  id=role_id)
+    role.name = role_update_data.name
+    role.description = role_update_data.description
+    for perm in role_update_data.permissions:
+        perm_obj = await get_obj(db=db, model=models.Permission,  id=perm.id)
+        role.permissions.append(perm_obj)
+    db.commit()
+    db.refresh(role)
+    return role
 

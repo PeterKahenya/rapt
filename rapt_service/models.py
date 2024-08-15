@@ -11,8 +11,8 @@ class Model(DeclarativeBase):
 role_permissions_association = Table(
     'role_permissions',
     Model.metadata,
-    Column('role_id', Uuid, ForeignKey('roles.id'), primary_key=True),
-    Column('permission_id', Uuid, ForeignKey('permissions.id'), primary_key=True)
+    Column('role_id', Uuid, ForeignKey('roles.id',ondelete="CASCADE"), primary_key=True),
+    Column('permission_id', Uuid, ForeignKey('permissions.id',ondelete="CASCADE"), primary_key=True)
 )
 
 class ContentType(Model):
@@ -26,7 +26,6 @@ class ContentType(Model):
 
 class Permission(Model):
     __tablename__ = "permissions"
-    
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True,unique=True,default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(100))
     codename: Mapped[str] = mapped_column(String(100))
@@ -39,7 +38,6 @@ class Permission(Model):
 
 class Role(Model):
     __tablename__ = "roles"
-    
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True,unique=True,default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(String(500))
