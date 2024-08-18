@@ -1,0 +1,14 @@
+fastapi[standard]
+celery
+PyMySQL
+cryptography
+sqlalchemy
+alembic
+pytest
+pytest-asyncio
+pydantic-settings
+requests
+pyjwt
+honeybadger
+coverage
+flower
