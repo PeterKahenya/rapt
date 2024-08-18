@@ -129,8 +129,8 @@ jobs:
                   MYSQL_DATABASE=${{ env.MYSQL_DATABASE }}
                   MYSQL_ROOT_PASSWORD=${{ env.MYSQL_ROOT_PASSWORD }}
                   MYSQL_PORT=${{ env.MYSQL_PORT }}
-                  SERVICE_PORT = 6001
-                  SERVICE_NAME = raptservice
+                  SERVICE_PORT=6001
+                  SERVICE_NAME=raptservice
                   EOF
         
                   kubectl delete secrets rapt-prod-env-secrets
