@@ -1,18 +1,29 @@
+from pydantic_settings import BaseSettings
 import pytest
 import sqlalchemy
 from sqlalchemy import create_engine,text,select
 from sqlalchemy.orm import sessionmaker
-from config import settings,TEST_DATABASE_URL
-import models
-from schemas import *
+from fastapi.testclient import TestClient
 import crud
+import models
+import schemas
 import uuid
 from api import app,get_db
-from fastapi.testclient import TestClient
 
 
 pytest_plugins = ('pytest_asyncio',)
 
+class Settings(BaseSettings):
+    mysql_driver: str = "mysql+pymysql"
+    test_database_host: str
+    test_database_port: int
+    test_database_user: str
+    test_database_password: str
+    test_database_name: str
+
+settings = Settings()
+TEST_DATABASE_URL = f"{settings.mysql_driver}://{settings.test_database_user}:{settings.test_database_password}@{settings.test_database_host}:{settings.test_database_port}"
+print(TEST_DATABASE_URL)
 
 @pytest.fixture(scope="session")
 def db():
@@ -60,45 +71,45 @@ def test_content_type_permissions_roles_models(db):
 #test contenttype, permission, roles schemas
 def test_content_type_permissions_roles_schema(db):
     #test create contenttype object
-    content_type = ContentTypeCreate(**{"content": "users"})
+    content_type = schemas.ContentTypeCreate(**{"content": "users"})
     assert content_type.content == "users"
     
     #test update contenttype object
-    content_type_update = ContentTypeUpdate(**{"content": "users1"})
+    content_type_update = schemas.ContentTypeUpdate(**{"content": "users1"})
     assert content_type_update.content == "users1"
 
     #test get contenttype object
     content_type_get = db.query(models.ContentType).first()
-    content_type_schema = ContentTypeInDBBase.model_validate(content_type_get)
+    content_type_schema = schemas.ContentTypeInDBBase.model_validate(content_type_get)
     assert content_type_schema.content == content_type_get.content
 
     #test create permission object
     content_type = db.query(models.ContentType).first()
-    permission = PermissionCreate(**{"name": "Can View Users","codename": "view_users","content_type_id": content_type.id})
+    permission = schemas.PermissionCreate(**{"name": "Can View Users","codename": "view_users","content_type_id": content_type.id})
     assert permission.name == "Can View Users"
     assert permission.codename == "view_users"
     
     #test update permission object
-    permission_update = PermissionUpdate(**{"name": "Can View Users1","codename": "view_users1","content_type_id": content_type.id})
+    permission_update = schemas.PermissionUpdate(**{"name": "Can View Users1","codename": "view_users1","content_type_id": content_type.id})
     assert permission_update.name == "Can View Users1"
     assert permission_update.codename == "view_users1"
 
     #test get permission object
     permission_get = db.query(models.Permission).first()
-    permission_schema = PermissionInDBBase.model_validate(permission_get)
+    permission_schema = schemas.PermissionInDBBase.model_validate(permission_get)
     assert permission_schema.name == permission_get.name
     assert permission_schema.codename == permission_get.codename
     assert permission_schema.content_type.content == permission_get.content_type.content
     
     #test create role object
-    role_create = RoleCreate(**{"name": "Admin","description": "Admin Role"})
+    role_create = schemas.RoleCreate(**{"name": "Admin","description": "Admin Role"})
     assert role_create.name == "Admin"
     assert role_create.description == "Admin Role"
     
     #test update role object
     permission1 = db.query(models.Permission).first()
     permission2 = db.query(models.Permission).all()[1]
-    role_update = RoleUpdate(**{
+    role_update = schemas.RoleUpdate(**{
         "name": "Admin1",
         "description": "Admin Role1",
         "permissions": [permission1.to_dict(),permission2.to_dict()]
@@ -108,7 +119,7 @@ def test_content_type_permissions_roles_schema(db):
 
     #test get role object
     role_get = db.query(models.Role).first()
-    role_schema = RoleInDBBase.model_validate(role_get)
+    role_schema = schemas.RoleInDBBase.model_validate(role_get)
     assert role_schema.name == role_get.name
     assert role_schema.description == role_get.description
     assert role_schema.permissions[0].name == role_get.permissions[0].name
@@ -122,7 +133,7 @@ def test_content_type_permissions_roles_schema(db):
 @pytest.mark.asyncio
 async def test_content_type_permissions_roles_crud(db):
     #create contenttype
-    content_type_params = ContentTypeCreate(**{"content": "users1"})
+    content_type_params = schemas.ContentTypeCreate(**{"content": "users1"})
     content_type_db =  await crud.create_obj(db,models.ContentType,content_type_params)
     assert content_type_db in db
     #read contenttype
@@ -133,7 +144,7 @@ async def test_content_type_permissions_roles_crud(db):
     content_types = await crud.get_objects_list(db=db,model=models.ContentType)
     assert content_type_db in content_types
     #update contenttype
-    content_type_update = ContentTypeUpdate(**{"content": "users2"})
+    content_type_update = schemas.ContentTypeUpdate(**{"content": "users2"})
     content_type_db = await crud.update_obj(db=db,model=models.ContentType,id=content_type_db.id,schema_model=content_type_update)
     assert content_type_db.content == "users2"
     #delete contenttype
@@ -141,9 +152,9 @@ async def test_content_type_permissions_roles_crud(db):
     assert content_type_db not in db
     
     #create permission
-    content_type_params1 = ContentTypeCreate(**{"content": "users2"})
+    content_type_params1 = schemas.ContentTypeCreate(**{"content": "users2"})
     content_type_db1 =  await crud.create_obj(db,models.ContentType,content_type_params1)
-    permission_params = PermissionCreate(**{"name": "Can View Users2","codename": "view_users2","content_type_id": content_type_db1.id})
+    permission_params = schemas.PermissionCreate(**{"name": "Can View Users2","codename": "view_users2","content_type_id": content_type_db1.id})
     permission_db =  await crud.create_obj(db,models.Permission,permission_params)
     assert permission_db in db
     #read permission
@@ -154,7 +165,7 @@ async def test_content_type_permissions_roles_crud(db):
     permissions = await crud.get_objects_list(db=db,model=models.Permission)
     assert permission_db in permissions
     #update permission
-    permission_update = PermissionUpdate(**{"name": "Can View Users3","codename": "view_users3","content_type_id": content_type_db1.id})
+    permission_update = schemas.PermissionUpdate(**{"name": "Can View Users3","codename": "view_users3","content_type_id": content_type_db1.id})
     permission_db = await crud.update_obj(db=db,model=models.Permission,id=permission_db.id,schema_model=permission_update)
     assert permission_db.name == "Can View Users3"
     #delete permission
@@ -162,9 +173,9 @@ async def test_content_type_permissions_roles_crud(db):
     assert permission_db not in db
     
     #create role
-    permission_params = PermissionCreate(**{"name": "Can View Users4","codename": "view_users4","content_type_id": content_type_db1.id})
+    permission_params = schemas.PermissionCreate(**{"name": "Can View Users4","codename": "view_users4","content_type_id": content_type_db1.id})
     permission_db =  await crud.create_obj(db,models.Permission,permission_params)
-    role_params = RoleCreate(**{"name": "Admin","description": "Admin Role"})
+    role_params = schemas.RoleCreate(**{"name": "Admin","description": "Admin Role"})
     role_db =  await crud.create_obj(db,models.Role,role_params)
     assert role_db in db
     #read role
@@ -176,7 +187,7 @@ async def test_content_type_permissions_roles_crud(db):
     assert role_db in roles
     #update role
     permissions = await crud.get_objects_list(db=db,model=models.Permission)
-    role_update = RoleUpdate(**{
+    role_update = schemas.RoleUpdate(**{
         "name": "Admin1",
         "description": "Admin Role1",
         "permissions": [p.to_dict() for p in permissions]

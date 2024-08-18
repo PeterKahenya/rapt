@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select,update,delete
 from pydantic import UUID4, BaseModel
-import models as models
-import schemas as schemas
+import models
+import schemas
 from config import logger
 from typing import List
 
