@@ -16,6 +16,11 @@ env:
     TEST_DATABASE_HOST: ${{ secrets.TEST_DATABASE_HOST }}
     TEST_DATABASE_PORT: ${{ secrets.TEST_DATABASE_PORT }}
     MYSQL_DRIVER: ${{ secrets.MYSQL_DRIVER }}
+    MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+    MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+    MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+    MYSQL_USER: ${{ secrets.MYSQL_USER }}
+    MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
 jobs:
     test:
@@ -39,7 +44,7 @@ jobs:
                     --health-retries=3
         defaults:
             run:
-                working-directory: service
+                working-directory: rapt_service
         strategy:
             max-parallel: 4
             matrix:
