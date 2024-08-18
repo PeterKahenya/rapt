@@ -39,7 +39,7 @@ jobs:
                     --health-retries=3
         defaults:
             run:
-                working-directory: service
+                working-directory: rapt_service
         strategy:
             max-parallel: 4
             matrix:
