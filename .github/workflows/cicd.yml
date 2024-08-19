@@ -21,7 +21,8 @@ env:
     MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
     MYSQL_USER: ${{ secrets.MYSQL_USER }}
     MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-    MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+    SERVICE_PORT: ${{ secrets.SERVICE_PORT }}
+    SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
 
 jobs:
     test:
@@ -123,14 +124,14 @@ jobs:
             -   name: Update k8s secrets
                 run: |
                   cat << EOF >> ./.env.prod
+                  MYSQL_DRIVER=${{ env.MYSQL_DRIVER }}
                   MYSQL_HOST=${{ env.MYSQL_HOST }}
                   MYSQL_USER=${{ env.MYSQL_USER }}
                   MYSQL_PASSWORD=${{ env.MYSQL_PASSWORD }}
                   MYSQL_DATABASE=${{ env.MYSQL_DATABASE }}
-                  MYSQL_ROOT_PASSWORD=${{ env.MYSQL_ROOT_PASSWORD }}
                   MYSQL_PORT=${{ env.MYSQL_PORT }}
-                  SERVICE_PORT=6001
-                  SERVICE_NAME=raptservice
+                  SERVICE_PORT=${{ env.SERVICE_PORT }}
+                  SERVICE_NAME=${{ env.SERVICE_NAME }}
                   EOF
         
                   kubectl delete secrets rapt-prod-env-secrets || true
