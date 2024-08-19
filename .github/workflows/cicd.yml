@@ -133,7 +133,7 @@ jobs:
                   SERVICE_NAME=raptservice
                   EOF
         
-                  kubectl delete secrets rapt-prod-env-secrets
+                  kubectl delete secrets rapt-prod-env-secrets || true
                   kubectl create secret generic rapt-prod-env-secrets --from-env-file ./.env.prod
             
             -   name: Apply k8s manifests
