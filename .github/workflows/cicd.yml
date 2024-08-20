@@ -132,7 +132,7 @@ jobs:
             -   name: Apply k8s manifests
                 run: |
                   kubectl apply -f k8s/rapt_service.yml
-                  kubectl apply -f k8s/rapt_ingress.yml
+                  kubectl apply -f k8s/ingress.yml
 
             -   name: Update Deployment Images
                 run: |
