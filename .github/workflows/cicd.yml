@@ -68,6 +68,7 @@ jobs:
                     coverage report -m
     
     build:
+        needs: test
         runs-on: ubuntu-latest
         env:
             K8S_CLUSTER_NAME: rapt-k8-cluster
@@ -94,6 +95,7 @@ jobs:
                     docker push registry.digitalocean.com/rapt-container-registry/rapt_service --all-tags
 
     deploy:
+        needs: build
         runs-on: ubuntu-latest
         env:
             K8S_CLUSTER_NAME: rapt-k8-cluster
