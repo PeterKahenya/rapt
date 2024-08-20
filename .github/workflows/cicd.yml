@@ -132,6 +132,7 @@ jobs:
             -   name: Apply k8s manifests
                 run: |
                   kubectl apply -f k8s/rapt_service.yml
+                  kubectl apply -f k8s/rapt_ingress.yml
 
             -   name: Update Deployment Images
                 run: |
@@ -140,4 +141,4 @@ jobs:
             -   name: Wait for Rollout to finish
                 run: |
                   kubectl rollout status deployment/rapt-service-deployment
-                  kubectl rollout status deployment/rapt-server-deployment   
+                  
