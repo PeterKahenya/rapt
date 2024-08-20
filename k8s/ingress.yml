@@ -33,6 +33,13 @@ spec:
             pathType: Prefix
             backend:
               service:
+                name: rapt-site-clustersvc
+                port:
+                  number: 6002
+          - path: /api/
+            pathType: Prefix
+            backend:
+              service:
                 name: rapt-service-clustersvc
                 port:
                   number: 6001
