@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rapt-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: rapt.chat
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rapt-service-clustersvc
+                port:
+                  number: 6001
