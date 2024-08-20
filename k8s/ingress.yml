@@ -36,7 +36,7 @@ spec:
                 name: rapt-site-clustersvc
                 port:
                   number: 6002
-          - path: /api/
+          - path: /api
             pathType: Prefix
             backend:
               service:
