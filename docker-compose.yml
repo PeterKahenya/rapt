@@ -29,23 +29,23 @@ services:
     command: sh -c "chmod +x /rapt_service/entrypoint.sh && sh /rapt_service/entrypoint.sh"
     volumes:
       - ./rapt_service/:/rapt_service/
-  
-  server:
-    container_name: nginxserver
+    
+  rapt_site:
+    container_name: rapt_site
     depends_on:
       - raptservice
     restart: always
     build: 
-      context: ./nginx
+      context: ./rapt_site
       dockerfile: Dockerfile
     env_file:
       - .env
+    expose:
+      - ${SITE_PORT}
     ports:
-      - "80:80"
-    command: sh -c "chmod +x /app/entrypoint.sh && sh /app/entrypoint.sh"
+      - "5002:${SITE_PORT}"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:rw
-      - ./nginx/static/:/var/www/static/:ro
+      - ./rapt_site/:/rapt_site/  
 
 volumes:
   rapt_mysql_db_data:
