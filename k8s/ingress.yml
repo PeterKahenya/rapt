@@ -1,9 +1,32 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt-nginx
+  namespace: backend
+spec:
+  acme:
+    email: peterkahenyanjoki@gmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: rapt-tls-cert-secret
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: rapt-ingress
+  namespace: backend
+  annotations:
+    cert-manager.io/issuer: letsencrypt-nginx
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - rapt.chat
+      secretName: rapt-tls-cert-secret
   rules:
     - host: rapt.chat
       http:
