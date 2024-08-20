@@ -221,7 +221,7 @@ async def test_initialize_api(client,db):
 @pytest.mark.asyncio
 async def test_permissions_roles_api(client,db):
     #get content type
-    response = client.get("/api/contenttypes/")
+    response = client.get("/contenttypes/")
     assert response.status_code == 200
     assert len(response.json()) > 0
     content_type_id = response.json()[0]["id"]
@@ -231,18 +231,18 @@ async def test_permissions_roles_api(client,db):
         "codename": "view_roles",
         "content_type_id": str(content_type_id)
     }
-    response = client.post("/api/permissions/",json=permission_data)
+    response = client.post("/permissions/",json=permission_data)
     assert response.status_code == 201
     assert response.json()["name"] == "Can View Roles"
     permission_id = uuid.UUID(response.json()["id"]) 
     permission = db.execute(select(models.Permission).where(models.Permission.id == permission_id)).scalar_one()
     assert permission in db
     #get permissions
-    response = client.get("/api/permissions/")
+    response = client.get("/permissions/")
     assert response.status_code == 200
     assert len(response.json()) >= 1
     #get single permission
-    response = client.get(f"/api/permissions/{permission_id}")
+    response = client.get(f"/permissions/{permission_id}")
     assert response.status_code == 200
     assert response.json()["name"] == "Can View Roles"
     #update permission
@@ -251,11 +251,11 @@ async def test_permissions_roles_api(client,db):
         "codename": "view_roles1",
         "content_type_id": str(content_type_id)
     }
-    response = client.put(f"/api/permissions/{permission_id}",json=permission_data)
+    response = client.put(f"/permissions/{permission_id}",json=permission_data)
     assert response.status_code == 200
     assert response.json()["name"] == "Can View Roles1"
     #delete permission
-    response = client.delete(f"/api/permissions/{permission_id}")
+    response = client.delete(f"/permissions/{permission_id}")
     assert response.status_code == 204
     permission = db.execute(select(models.Permission).where(models.Permission.id == permission_id)).scalar_one_or_none()
     assert permission is None
@@ -267,16 +267,16 @@ async def test_permissions_roles_api(client,db):
         "description": "Admin Role",
         "permissions": [p.to_dict() for p in permissions]
     }
-    response = client.post("/api/roles/",json=role_data)
+    response = client.post("/roles/",json=role_data)
     assert response.status_code == 201
     assert response.json()["name"] == "Admin"
     #get roles
-    response = client.get("/api/roles/")
+    response = client.get("/roles/")
     assert response.status_code == 200
     assert len(response.json()) >= 1
     #get single role
     role_id = uuid.UUID(response.json()[0]["id"])
-    response = client.get(f"/api/roles/{role_id}")
+    response = client.get(f"/roles/{role_id}")
     assert response.status_code == 200
     assert response.json()["name"] == "Admin"
     
@@ -286,12 +286,12 @@ async def test_permissions_roles_api(client,db):
         "name": "Admin1",
         "permissions": [p.to_dict() for p in permissions]
     }
-    response = client.put(f"/api/roles/{role_id}",json=role_data)
+    response = client.put(f"/roles/{role_id}",json=role_data)
     assert response.status_code == 200
     assert response.json()["name"] == "Admin1"
     
     #delete role
-    response = client.delete(f"/api/roles/{role_id}")
+    response = client.delete(f"/roles/{role_id}")
     assert response.status_code == 204
     role = db.execute(select(models.Role).where(models.Role.id == role_id)).scalar_one_or_none()
     assert role is None
