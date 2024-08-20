@@ -11,7 +11,7 @@ import models
 import schemas
 
 
-app = FastAPI(root_path="/api")
+app = FastAPI()
 
 def get_db():
     try:
