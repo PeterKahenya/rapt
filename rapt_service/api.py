@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker,Session
 from typing import List
 from pydantic import UUID4
 import uvicorn
-
+import os
 import config
 import crud
 import models
@@ -87,4 +87,5 @@ async def delete_role(role_id: UUID4, db: Session = Depends(get_db)) -> None:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app="api:app",host="0.0.0.0",port=8000,reload=True)
+    SERVICE_PORT = os.environ.get("SERVICE_PORT")
+    uvicorn.run(app="api:app",host="0.0.0.0",port=int(SERVICE_PORT),reload=True)

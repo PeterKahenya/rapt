@@ -21,6 +21,8 @@ env:
     MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
     MYSQL_USER: ${{ secrets.MYSQL_USER }}
     MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+    SERVICE_PORT: ${{ secrets.SERVICE_PORT }}
+    SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
 
 jobs:
     test:
@@ -64,3 +66,81 @@ jobs:
                 run: |
                     coverage run -m pytest
                     coverage report -m
+    
+    build:
+        needs: test
+        runs-on: ubuntu-latest
+        env:
+            K8S_CLUSTER_NAME: rapt-k8-cluster
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v3
+            -   name: Install doctl
+                uses: digitalocean/action-doctl@v2
+                with:
+                    token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+            -   name: Login to DO Registry with Short-lived credentials
+                run: doctl registry login --expiry-seconds 1200
+      
+            -   name: Build rapt_service image
+                run: |
+                    docker build \
+                        -t registry.digitalocean.com/rapt-container-registry/rapt_service:latest \
+                        -t registry.digitalocean.com/rapt-container-registry/rapt_service:${GITHUB_SHA::7} \
+                        rapt_service/
+      
+            -   name: Push Images
+                run: | 
+                    docker push registry.digitalocean.com/rapt-container-registry/rapt_service --all-tags
+
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        env:
+            K8S_CLUSTER_NAME: rapt-k8-cluster
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v3
+
+            -   name: Install doctl
+                uses: digitalocean/action-doctl@v2
+                with:
+                    token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+            -   name: Login to DO Registry with Short-lived credentials
+                run: doctl registry login --expiry-seconds 1200
+          
+            -   name: K8s cluster kubeconfig file with Short-lived credentials
+                run: |
+                  doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ env.K8S_CLUSTER_NAME }}
+        
+            -   name: Update k8s secrets
+                run: |
+                  cat << EOF >> ./.env.prod
+                  MYSQL_DRIVER=${{ env.MYSQL_DRIVER }}
+                  MYSQL_HOST=${{ env.MYSQL_HOST }}
+                  MYSQL_USER=${{ env.MYSQL_USER }}
+                  MYSQL_PASSWORD=${{ env.MYSQL_PASSWORD }}
+                  MYSQL_DATABASE=${{ env.MYSQL_DATABASE }}
+                  MYSQL_PORT=${{ env.MYSQL_PORT }}
+                  SERVICE_PORT=${{ env.SERVICE_PORT }}
+                  SERVICE_NAME=${{ env.SERVICE_NAME }}
+                  EOF
+        
+                  kubectl delete secrets rapt-prod-env-secrets || true
+                  kubectl create secret generic rapt-prod-env-secrets --from-env-file ./.env.prod
+            
+            -   name: Apply k8s manifests
+                run: |
+                  kubectl apply -f k8s/rapt_service.yml
+                  kubectl apply -f k8s/ingress.yml
+
+            -   name: Update Deployment Images
+                run: |
+                  kubectl set image deployment/rapt-service-deployment rapt-service=registry.digitalocean.com/rapt-container-registry/rapt_service:${GITHUB_SHA::7}
+        
+            -   name: Wait for Rollout to finish
+                run: |
+                  kubectl rollout status deployment/rapt-service-deployment
+                  

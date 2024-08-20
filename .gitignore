@@ -1,3 +1,4 @@
 .envrc
 .pytest_cache/
 .env
+.env.prod
