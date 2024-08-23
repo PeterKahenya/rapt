@@ -10,8 +10,13 @@ import crud
 import models
 import schemas
 
+fastapi_config = {
+    "title":"RaptChat Service",
+    "debug":True,
+    "root_path": "/api/v1"
+}
 
-app = FastAPI()
+app = FastAPI(**fastapi_config)
 
 def get_db():
     try:
