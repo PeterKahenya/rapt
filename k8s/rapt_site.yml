@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rapt-site-deployment
+  labels:
+    app: rapt-site
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rapt-site-pod
+  template:
+    metadata:
+      labels:
+        app: rapt-site-pod
+    spec:
+      imagePullSecrets:
+        - name: rapt-container-registry
+      containers:
+        - name: rapt-site
+          image: registry.digitalocean.com/rapt-container-registry/rapt_site:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: rapt-prod-env-secrets
+          ports:
+            - containerPort: 6002
+
+---
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: rapt-site-clustersvc
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      protocol: TCP
+      port: 6002
+      targetPort: 6002 # pod/container port
+  selector:
+    app: rapt-site-pod
+  

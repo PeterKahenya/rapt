@@ -23,6 +23,7 @@ env:
     MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
     SERVICE_PORT: ${{ secrets.SERVICE_PORT }}
     SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+    SITE_PORT: ${{ secrets.SITE_PORT }}
 
 jobs:
     test:
@@ -89,10 +90,19 @@ jobs:
                         -t registry.digitalocean.com/rapt-container-registry/rapt_service:latest \
                         -t registry.digitalocean.com/rapt-container-registry/rapt_service:${GITHUB_SHA::7} \
                         rapt_service/
+            
+            -   name: Build rapt_site image
+                run: |
+                    docker build \
+                        -t registry.digitalocean.com/rapt-container-registry/rapt_site:latest \
+                        -t registry.digitalocean.com/rapt-container-registry/rapt_site:${GITHUB_SHA::7} \
+                        rapt_site/
       
             -   name: Push Images
                 run: | 
                     docker push registry.digitalocean.com/rapt-container-registry/rapt_service --all-tags
+                    docker push registry.digitalocean.com/rapt-container-registry/rapt_site --all-tags
+
 
     deploy:
         needs: build
@@ -126,6 +136,7 @@ jobs:
                   MYSQL_PORT=${{ env.MYSQL_PORT }}
                   SERVICE_PORT=${{ env.SERVICE_PORT }}
                   SERVICE_NAME=${{ env.SERVICE_NAME }}
+                  SITE_PORT=${{ env.SITE_PORT }}
                   EOF
         
                   kubectl delete secrets rapt-prod-env-secrets || true
@@ -134,13 +145,17 @@ jobs:
             -   name: Apply k8s manifests
                 run: |
                   kubectl apply -f k8s/rapt_service.yml
+                  kubectl apply -f k8s/rapt_site.yml
                   kubectl apply -f k8s/ingress.yml
 
             -   name: Update Deployment Images
                 run: |
                   kubectl set image deployment/rapt-service-deployment rapt-service=registry.digitalocean.com/rapt-container-registry/rapt_service:${GITHUB_SHA::7}
+                  kubectl set image deployment/rapt-site-deployment rapt-site=registry.digitalocean.com/rapt-container-registry/rapt_site:${GITHUB_SHA::7}
         
             -   name: Wait for Rollout to finish
                 run: |
                   kubectl rollout status deployment/rapt-service-deployment
+                  kubectl rollout status deployment/rapt-site-deployment
+
                   

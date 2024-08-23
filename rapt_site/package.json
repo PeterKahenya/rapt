@@ -1,0 +1,24 @@
+{
+  "name": "rapt_site",
+  "version": "1.0.0",
+  "description": "Rapt.chat website with info",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "author": "Peter Kahenya",
+  "license": "ISC",
+  "dependencies": {
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.4.1",
+    "@types/react": "18.3.3",
+    "typescript": "5.5.4"
+  }
+}
