@@ -20,3 +20,4 @@ class AppSettings(BaseSettings):
 settings = AppSettings()
 DATABASE_URL = f"{settings.mysql_driver}://{settings.mysql_user}:{settings.mysql_password}@{settings.mysql_host}:{settings.mysql_port}/{settings.mysql_database}"
 
+DEFAULT_PERMISSIONS_CLASSES = ["create","read","update","delete"]

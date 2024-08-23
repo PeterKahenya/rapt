@@ -20,27 +20,14 @@ class ModelInDBBase(ModelBase):
 class ContentTypeCreate(BaseModel):
     content: str
 
-class ContentTypeFilter(ContentTypeCreate):
-    pass
-
-class ContentTypeUpdate(ContentTypeCreate):
-    pass
-
 class ContentTypeInDBBase(ModelInDBBase):
     content: str
-
-
 
 # permission schema
 class PermissionCreate(BaseModel):
     name: str
     codename: str
     content_type_id: UUID4
-
-class PermissionUpdate(BaseModel):
-    name: Optional[str] = None
-    codename: Optional[str] = None
-    content_type_id: Optional[UUID4] = None
 
 class PermissionInDBBase(ModelInDBBase):
     name: str
