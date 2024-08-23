@@ -13,7 +13,7 @@ import schemas
 fastapi_config = {
     "title":"RaptChat Service",
     "debug":True,
-    "root_path": "/api/v1"
+    "root_path": "/api"
 }
 
 app = FastAPI(**fastapi_config)
