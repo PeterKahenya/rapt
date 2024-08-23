@@ -32,17 +32,20 @@ def get_db():
 @app.get("/initialize/")
 async def initialize(db: Session = Depends(get_db)):
     for content in models.Model.metadata.tables.values():
-        if not await crud.filter_objects(db=db,model=models.ContentType,params={"content":content.name}):
-            await crud.create_obj(db=db,model=models.ContentType,schema_model=schemas.ContentTypeCreate(content=content.name))
+        content_types = await crud.filter_objects(db=db,model=models.ContentType,params={"content":content.name})
+        if not content_types:
+            content_type = await crud.create_obj(db=db,model=models.ContentType,schema_model=schemas.ContentTypeCreate(content=content.name))
+        else:
+            content_type = content_types[0]
+        for permission in config.DEFAULT_PERMISSIONS_CLASSES:
+            if not await crud.filter_objects(db=db,model=models.Permission,params={"codename":permission+"_"+content_type.content}):
+                perm_object = {
+                    "name":permission.title()+" "+content_type.content.title(),
+                    "codename":permission+"_"+content_type.content,
+                    "content_type_id":content_type.id
+                }
+                await crud.create_obj(db=db,model=models.Permission,schema_model=schemas.PermissionCreate(**perm_object))    
     return {"message":"System Initialized"}
-
-@app.get("/contenttypes/",response_model=List[schemas.ContentTypeInDBBase])
-async def get_content_types(db: Session = Depends(get_db)) -> List[schemas.ContentTypeInDBBase]:
-    return await crud.get_objects_list(db=db,model=models.ContentType)
-
-@app.post("/permissions/",status_code=201,response_model=schemas.PermissionInDBBase)
-async def create_permission(permission: schemas.PermissionCreate, db: Session = Depends(get_db)) -> schemas.PermissionInDBBase:
-    return await crud.create_obj(db=db,model=models.Permission,schema_model=permission)
 
 #TODO add supoport for filtering/searching for permissions
 @app.get("/permissions/",response_model=List[schemas.PermissionInDBBase])
@@ -52,18 +55,6 @@ async def get_permissions(db: Session = Depends(get_db)) -> List[schemas.Permiss
 @app.get("/permissions/{permission_id}",response_model=schemas.PermissionInDBBase)
 async def get_permission(permission_id: UUID4, db: Session = Depends(get_db)) -> schemas.PermissionInDBBase:
     return await crud.get_obj(db=db,model=models.Permission,id=permission_id)
-
-@app.put("/permissions/{permission_id}",response_model=schemas.PermissionInDBBase)
-async def update_permission(permission_id: UUID4, permission: schemas.PermissionUpdate, db: Session = Depends(get_db)) -> schemas.PermissionInDBBase:
-    return await crud.update_obj(db=db,model=models.Permission,id=permission_id,schema_model=permission)
-
-@app.delete("/permissions/{permission_id}",status_code=204)
-async def delete_permission(permission_id: UUID4, db: Session = Depends(get_db)) -> None:
-    is_deleted = await crud.delete_obj(db=db,model=models.Permission,id=permission_id)
-    if is_deleted:
-        return None
-    else:
-        return {"message":"Something went wrong"},500
     
 @app.post("/roles/",status_code=201,response_model=schemas.RoleInDBBase)
 async def create_role(role: schemas.RoleCreate, db: Session = Depends(get_db)) -> schemas.RoleInDBBase:
