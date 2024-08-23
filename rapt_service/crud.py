@@ -4,7 +4,7 @@ from pydantic import UUID4, BaseModel
 import models
 import schemas
 from config import logger
-from typing import List
+from typing import List, Sequence
 
 
 #create
@@ -21,11 +21,11 @@ async def get_obj(db: Session, model: models.Model, id: UUID4, ) -> models.Model
     logger.info(f"Getting {model.__tablename__} with id: {id}")
     return db.execute(select(model).where(model.id == id)).scalar_one()
 
-async def get_objects_list(db: Session, model: models.Model) -> List[models.Model]:
+async def get_objects_list(db: Session, model: models.Model) -> Sequence[models.Model]:
     logger.info(f"Getting all {model.__tablename__}")
     return db.scalars(select(model)).all()
 
-async def filter_objects(db: Session, model: models.Model, params: dict) -> List[models.Model]:
+async def filter_objects(db: Session, model: models.Model, params: dict) -> Sequence[models.Model]:
     query = select(model)
     for key, value in params.items():
         query = query.where(getattr(model, key) == value)

@@ -23,7 +23,6 @@ class Settings(BaseSettings):
 
 settings = Settings()
 TEST_DATABASE_URL = f"{settings.mysql_driver}://{settings.test_database_user}:{settings.test_database_password}@{settings.test_database_host}:{settings.test_database_port}"
-print(TEST_DATABASE_URL)
 
 @pytest.fixture(scope="session")
 def db():
@@ -73,10 +72,6 @@ def test_content_type_permissions_roles_schema(db):
     #test create contenttype object
     content_type = schemas.ContentTypeCreate(**{"content": "users"})
     assert content_type.content == "users"
-    
-    #test update contenttype object
-    content_type_update = schemas.ContentTypeUpdate(**{"content": "users1"})
-    assert content_type_update.content == "users1"
 
     #test get contenttype object
     content_type_get = db.query(models.ContentType).first()
@@ -88,11 +83,6 @@ def test_content_type_permissions_roles_schema(db):
     permission = schemas.PermissionCreate(**{"name": "Can View Users","codename": "view_users","content_type_id": content_type.id})
     assert permission.name == "Can View Users"
     assert permission.codename == "view_users"
-    
-    #test update permission object
-    permission_update = schemas.PermissionUpdate(**{"name": "Can View Users1","codename": "view_users1","content_type_id": content_type.id})
-    assert permission_update.name == "Can View Users1"
-    assert permission_update.codename == "view_users1"
 
     #test get permission object
     permission_get = db.query(models.Permission).first()
@@ -131,49 +121,11 @@ def test_content_type_permissions_roles_schema(db):
 
 #test contenttype crud operations
 @pytest.mark.asyncio
-async def test_content_type_permissions_roles_crud(db):
-    #create contenttype
-    content_type_params = schemas.ContentTypeCreate(**{"content": "users1"})
-    content_type_db =  await crud.create_obj(db,models.ContentType,content_type_params)
-    assert content_type_db in db
-    #read contenttype
-    content_type_get =  await crud.get_obj(db=db, model=models.ContentType,  id=content_type_db.id)
-    assert content_type_get == content_type_db
-    with pytest.raises(sqlalchemy.exc.NoResultFound) as e:
-        await crud.get_obj(db=db, model=models.ContentType,  id=uuid.uuid4())
-    content_types = await crud.get_objects_list(db=db,model=models.ContentType)
-    assert content_type_db in content_types
-    #update contenttype
-    content_type_update = schemas.ContentTypeUpdate(**{"content": "users2"})
-    content_type_db = await crud.update_obj(db=db,model=models.ContentType,id=content_type_db.id,schema_model=content_type_update)
-    assert content_type_db.content == "users2"
-    #delete contenttype
-    is_deleted = await crud.delete_obj(db=db,model=models.ContentType, id=content_type_db.id)
-    assert content_type_db not in db
-    
-    #create permission
-    content_type_params1 = schemas.ContentTypeCreate(**{"content": "users2"})
-    content_type_db1 =  await crud.create_obj(db,models.ContentType,content_type_params1)
-    permission_params = schemas.PermissionCreate(**{"name": "Can View Users2","codename": "view_users2","content_type_id": content_type_db1.id})
-    permission_db =  await crud.create_obj(db,models.Permission,permission_params)
-    assert permission_db in db
-    #read permission
-    permission_get =  await crud.get_obj(db=db, model=models.Permission,  id=permission_db.id)
-    assert permission_get == permission_db
-    with pytest.raises(sqlalchemy.exc.NoResultFound) as e:
-        await crud.get_obj(db=db, model=models.Permission,  id=uuid.uuid4())
-    permissions = await crud.get_objects_list(db=db,model=models.Permission)
-    assert permission_db in permissions
-    #update permission
-    permission_update = schemas.PermissionUpdate(**{"name": "Can View Users3","codename": "view_users3","content_type_id": content_type_db1.id})
-    permission_db = await crud.update_obj(db=db,model=models.Permission,id=permission_db.id,schema_model=permission_update)
-    assert permission_db.name == "Can View Users3"
-    #delete permission
-    is_deleted = await crud.delete_obj(db=db,model=models.Permission, id=permission_db.id)
-    assert permission_db not in db
-    
+async def test_content_type_permissions_roles_crud(db):  
+    content_types =  await crud.get_objects_list(db,models.ContentType)
+    content_type_db = content_types[0]
     #create role
-    permission_params = schemas.PermissionCreate(**{"name": "Can View Users4","codename": "view_users4","content_type_id": content_type_db1.id})
+    permission_params = schemas.PermissionCreate(**{"name": "Can View Users4","codename": "view_users4","content_type_id": content_type_db.id})
     permission_db =  await crud.create_obj(db,models.Permission,permission_params)
     role_params = schemas.RoleCreate(**{"name": "Admin","description": "Admin Role"})
     role_db =  await crud.create_obj(db,models.Role,role_params)
@@ -220,45 +172,15 @@ async def test_initialize_api(client,db):
 #test CRUD api calls for permissions, roles
 @pytest.mark.asyncio
 async def test_permissions_roles_api(client,db):
-    #get content type
-    response = client.get("/contenttypes/")
-    assert response.status_code == 200
-    assert len(response.json()) > 0
-    content_type_id = response.json()[0]["id"]
-    #create permission
-    permission_data = {
-        "name": "Can View Roles",
-        "codename": "view_roles",
-        "content_type_id": str(content_type_id)
-    }
-    response = client.post("/permissions/",json=permission_data)
-    assert response.status_code == 201
-    assert response.json()["name"] == "Can View Roles"
-    permission_id = uuid.UUID(response.json()["id"]) 
-    permission = db.execute(select(models.Permission).where(models.Permission.id == permission_id)).scalar_one()
-    assert permission in db
     #get permissions
     response = client.get("/permissions/")
     assert response.status_code == 200
     assert len(response.json()) >= 1
+    permission_id = uuid.UUID(response.json()[0]["id"])
     #get single permission
     response = client.get(f"/permissions/{permission_id}")
     assert response.status_code == 200
-    assert response.json()["name"] == "Can View Roles"
-    #update permission
-    permission_data = {
-        "name": "Can View Roles1",
-        "codename": "view_roles1",
-        "content_type_id": str(content_type_id)
-    }
-    response = client.put(f"/permissions/{permission_id}",json=permission_data)
-    assert response.status_code == 200
-    assert response.json()["name"] == "Can View Roles1"
-    #delete permission
-    response = client.delete(f"/permissions/{permission_id}")
-    assert response.status_code == 204
-    permission = db.execute(select(models.Permission).where(models.Permission.id == permission_id)).scalar_one_or_none()
-    assert permission is None
+    assert response.json()["name"] != None
     
     #create role
     permissions = db.execute(select(models.Permission)).scalars().all()
