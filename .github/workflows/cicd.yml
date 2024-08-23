@@ -71,6 +71,7 @@ jobs:
     build:
         needs: test
         runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'
         env:
             K8S_CLUSTER_NAME: rapt-k8-cluster
         steps:
@@ -107,6 +108,7 @@ jobs:
     deploy:
         needs: build
         runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'
         env:
             K8S_CLUSTER_NAME: rapt-k8-cluster
         steps:
