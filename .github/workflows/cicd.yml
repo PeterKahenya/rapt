@@ -65,7 +65,7 @@ jobs:
                     pip install -r requirements.txt
             -   name: Run pytests
                 run: |
-                    coverage run -m pytest
+                    coverage run -m pytest -p no:cacheprovider
                     coverage report -m
     
     build:
