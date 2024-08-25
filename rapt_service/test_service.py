@@ -177,6 +177,10 @@ async def test_permissions_roles_api(client,db):
     assert response.status_code == 200
     assert len(response.json()) >= 1
     permission_id = uuid.UUID(response.json()[0]["id"])
+    response = client.get("/permissions?q=Delete")
+    assert response.status_code == 200
+    assert len(response.json()) >= 1
+    assert "Delete" in response.json()[0]["name"]
     #get single permission
     response = client.get(f"/permissions/{permission_id}")
     assert response.status_code == 200

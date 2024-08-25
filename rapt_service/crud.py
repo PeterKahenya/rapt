@@ -5,6 +5,7 @@ import models
 import schemas
 from config import logger
 from typing import List, Sequence
+from sqlalchemy import or_
 
 
 #create
@@ -26,9 +27,40 @@ async def get_objects_list(db: Session, model: models.Model) -> Sequence[models.
     return db.scalars(select(model)).all()
 
 async def filter_objects(db: Session, model: models.Model, params: dict) -> Sequence[models.Model]:
+    CONDITION_MAP = {
+        'eq': lambda col, val: col == val,
+        'ne': lambda col, val: col != val,
+        'lt': lambda col, val: col < val,
+        'le': lambda col, val: col <= val,
+        'gt': lambda col, val: col > val,
+        'ge': lambda col, val: col >= val,
+        'like': lambda col, val: col.like(val),
+        'ilike': lambda col, val: col.ilike(val),
+        'in': lambda col, val: col.in_(val),
+    }
     query = select(model)
     for key, value in params.items():
-        query = query.where(getattr(model, key) == value)
+        if '__' in key:
+            column_name, condition = key.split('__', 1)
+        else:
+            column_name, condition = key, 'eq'
+        column = getattr(model, column_name)
+        query = query.where(CONDITION_MAP[condition](column, value))
+    try:
+        return db.scalars(query).all()
+    except:
+        return []
+    
+
+async def search_objects(db: Session, model: models.Model, q: str) -> Sequence[models.Model]:
+    logger.info(f"Searching {model.__tablename__} with query: {q}")
+    query = select(model)
+    conditions = []
+    for column in model.__table__.columns:
+        if column.type.python_type == str:
+            conditions.append(column.ilike(f"%{q}%"))
+    if conditions:
+        query = query.where(or_(*conditions))
     return db.scalars(query).all()
 
 #update

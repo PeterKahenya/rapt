@@ -1,7 +1,7 @@
 from fastapi import FastAPI,Depends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker,Session
-from typing import List
+from typing import List,Dict
 from pydantic import UUID4
 import uvicorn
 import os
@@ -49,8 +49,13 @@ async def initialize(db: Session = Depends(get_db)):
 
 #TODO add supoport for filtering/searching for permissions
 @app.get("/permissions/",response_model=List[schemas.PermissionInDBBase])
-async def get_permissions(db: Session = Depends(get_db)) -> List[schemas.PermissionInDBBase]:
-    return await crud.get_objects_list(db=db,model=models.Permission)
+async def get_permissions(db: Session = Depends(get_db), q: str | None = None,params: Dict |None = None) -> List[schemas.PermissionInDBBase]:
+    if q:
+        return await crud.search_objects(db=db,model=models.Permission,q=q)
+    elif params:
+        return await crud.filter_objects(db=db,model=models.Permission,params=params)
+    else:
+        return await crud.get_objects_list(db=db,model=models.Permission)
 
 @app.get("/permissions/{permission_id}",response_model=schemas.PermissionInDBBase)
 async def get_permission(permission_id: UUID4, db: Session = Depends(get_db)) -> schemas.PermissionInDBBase:
