@@ -119,7 +119,7 @@ async def paginate(
                 ) -> Pagination:
     if q:
         data = await search_objects(db=db, model=model,q=q)
-    elif params:
+    elif params and len(params) > 0:
         data = await filter_objects(db=db, model=model,params=params)
     else:
         data = await get_objects_list(db=db, model=model)

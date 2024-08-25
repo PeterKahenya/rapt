@@ -9,7 +9,6 @@ import config
 import crud
 import models
 import schemas
-import utils
 
 
 fastapi_config = {
