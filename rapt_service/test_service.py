@@ -63,10 +63,55 @@ def test_content_type_permissions_roles_models(db):
     db.commit()
     assert role in db
     
+#test create user, add contacts, roles
+@pytest.mark.asyncio
+async def test_add_user_contacts_roles_clientapp_models(db):
+    user = models.User(name="Test User", phone="1234567890")
+    db.add(user)
+    db.commit()
+    assert user in db
+    user1 = models.User(name="Test User 1", phone="1234567891")
+    user2 = models.User(name="Test User 2", phone="1234567892")
+    user.contacts.append(user1)
+    user.contacts.append(user2)
+    db.add(user)
+    db.commit()
+    assert user1 in user.contacts
+    assert user2 in user.contacts
+    permission1 = db.execute(select(models.Permission).where(models.Permission.name == "Can View Users")).scalar_one()
+    permission2 = db.execute(select(models.Permission).where(models.Permission.name == "Can Edit Users")).scalar_one()
+    role = models.Role(name="Admin",description="Admin Role")
+    role.permissions.append(permission1)
+    role.permissions.append(permission2)
+    db.add(role)
+    db.commit()
+    assert role in db
+    
+    #test clientapp creation
+    clientapp = models.ClientApp(name="Test App",description="Test App Description",user=user)
+    db.add(clientapp)
+    db.commit()
+    assert clientapp in db
+    assert clientapp.user == user
+    assert clientapp.client_id != None
+    assert clientapp.client_secret != None
+    
+    #test user verification creation and validation
+    user = await user.create_verification_code(db)
+    assert user.phone_verification_code != None
+    validation_status = await user.validate_verification_code(user.phone_verification_code)
+    assert validation_status == True
+    
+    #test user jwt token creation and validation
+    token = user.create_jwt_token()
+    assert user.phone == models.User.verify_jwt_token(db,token)
+    
+    
+    
+    
 
 
 """Test Schemas"""
-
 #test contenttype, permission, roles schemas
 def test_content_type_permissions_roles_schema(db):
     #test create contenttype object
