@@ -175,12 +175,12 @@ async def test_permissions_roles_api(client,db):
     #get permissions
     response = client.get("/permissions/")
     assert response.status_code == 200
-    assert len(response.json()) >= 1
-    permission_id = uuid.UUID(response.json()[0]["id"])
+    assert len(response.json()["data"]) >= 1
+    permission_id = uuid.UUID(response.json()["data"][0]["id"])
     response = client.get("/permissions?q=Delete")
     assert response.status_code == 200
-    assert len(response.json()) >= 1
-    assert "Delete" in response.json()[0]["name"]
+    assert len(response.json()["data"]) >= 1
+    assert "Delete" in response.json()["data"][0]["name"]
     #get single permission
     response = client.get(f"/permissions/{permission_id}")
     assert response.status_code == 200
@@ -199,9 +199,9 @@ async def test_permissions_roles_api(client,db):
     #get roles
     response = client.get("/roles/")
     assert response.status_code == 200
-    assert len(response.json()) >= 1
+    assert len(response.json()["data"]) >= 1
     #get single role
-    role_id = uuid.UUID(response.json()[0]["id"])
+    role_id = uuid.UUID(response.json()["data"][0]["id"])
     response = client.get(f"/roles/{role_id}")
     assert response.status_code == 200
     assert response.json()["name"] == "Admin"
@@ -222,6 +222,29 @@ async def test_permissions_roles_api(client,db):
     role = db.execute(select(models.Role).where(models.Role.id == role_id)).scalar_one_or_none()
     assert role is None
     
+    # test pagination
+    response = client.get("/permissions/?page=1&size=1")
+    assert response.status_code == 200
+    assert len(response.json()["data"]) == 1
+    assert response.json()["total"] >= 1
+    assert response.json()["page"] == 1
+    assert response.json()["size"] == 1
+    response = client.get("/permissions/?page=2&size=1")
+    assert response.status_code == 200
+    assert len(response.json()["data"]) == 1
+    assert response.json()["total"] >= 1
+    assert response.json()["page"] == 2
+    assert response.json()["size"] == 1
+    response = client.get("/permissions/?page=1&size=2")
+    assert response.status_code == 200
+    assert len(response.json()["data"]) == 2
+    assert response.json()["total"] >= 1
+    assert response.json()["page"] == 1
+    assert response.json()["size"] == 2
     
-    
+    # test search
+    response = client.get("/permissions/?q=Delete")
+    assert response.status_code == 200
+    assert len(response.json()["data"]) >= 1
+    assert "Delete" in response.json()["data"][0]["name"]
     

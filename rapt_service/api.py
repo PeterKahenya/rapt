@@ -1,7 +1,7 @@
-from fastapi import FastAPI,Depends
+from fastapi import FastAPI,Depends,Query
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker,Session
-from typing import List,Dict
+from typing import List,Dict,Optional
 from pydantic import UUID4
 import uvicorn
 import os
@@ -9,6 +9,8 @@ import config
 import crud
 import models
 import schemas
+import utils
+
 
 fastapi_config = {
     "title":"RaptChat Service",
@@ -48,14 +50,25 @@ async def initialize(db: Session = Depends(get_db)):
     return {"message":"System Initialized"}
 
 #TODO add supoport for filtering/searching for permissions
-@app.get("/permissions/",response_model=List[schemas.PermissionInDBBase])
-async def get_permissions(db: Session = Depends(get_db), q: str | None = None,params: Dict |None = None) -> List[schemas.PermissionInDBBase]:
+@app.get("/permissions/",response_model=utils.Pagination)
+async def get_permissions(
+                        db: Session = Depends(get_db), 
+                        q: Optional[str] = None,
+                        params: Optional[Dict] = None,
+                        page: int = Query(1, ge=1),
+                        size: int = Query(10, ge=1, le=100)
+                        ) -> utils.Pagination:
     if q:
-        return await crud.search_objects(db=db,model=models.Permission,q=q)
+        permissions = await crud.search_objects(db=db,model=models.Permission,q=q)
     elif params:
-        return await crud.filter_objects(db=db,model=models.Permission,params=params)
+        permissions = await crud.filter_objects(db=db,model=models.Permission,params=params)
     else:
-        return await crud.get_objects_list(db=db,model=models.Permission)
+        permissions = await crud.get_objects_list(db=db,model=models.Permission)
+    return utils.paginate(
+        items=[schemas.PermissionInDBBase.model_validate(p).model_dump() for p in permissions],
+        page=page,
+        size=size
+    )
 
 @app.get("/permissions/{permission_id}",response_model=schemas.PermissionInDBBase)
 async def get_permission(permission_id: UUID4, db: Session = Depends(get_db)) -> schemas.PermissionInDBBase:
@@ -65,9 +78,24 @@ async def get_permission(permission_id: UUID4, db: Session = Depends(get_db)) ->
 async def create_role(role: schemas.RoleCreate, db: Session = Depends(get_db)) -> schemas.RoleInDBBase:
     return await crud.create_obj(db=db,model=models.Role,schema_model=role)
 
-@app.get("/roles/",response_model=List[schemas.RoleInDBBase])
-async def get_roles(db: Session = Depends(get_db)) -> List[schemas.RoleInDBBase]:
-    return await crud.get_objects_list(db=db,model=models.Role)
+@app.get("/roles/",response_model=utils.Pagination)
+async def get_roles(
+                        db: Session = Depends(get_db), 
+                        q: Optional[str] = None,
+                        params: Optional[Dict] = None,
+                        page: int = Query(1, ge=1),
+                        size: int = Query(10, ge=1, le=100)) -> utils.Pagination:
+    if q:
+        roles = await crud.search_objects(db=db,model=models.Role,q=q)
+    elif params:
+        roles = await crud.filter_objects(db=db,model=models.Role,params=params)
+    else:
+        roles = await crud.get_objects_list(db=db,model=models.Role)
+    return utils.paginate(
+        items=[schemas.RoleInDBBase.model_validate(r).model_dump() for r in roles],
+        page=page,
+        size=size
+    )
 
 @app.get("/roles/{role_id}",response_model=schemas.RoleInDBBase)
 async def get_role(role_id: UUID4, db: Session = Depends(get_db)) -> schemas.RoleInDBBase:
@@ -84,7 +112,6 @@ async def delete_role(role_id: UUID4, db: Session = Depends(get_db)) -> None:
         return None
     else:
         return {"message":"Something went wrong"},500
-    
 
 
 if __name__ == "__main__":
