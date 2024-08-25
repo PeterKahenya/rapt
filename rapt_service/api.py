@@ -50,22 +50,20 @@ async def initialize(db: Session = Depends(get_db)):
     return {"message":"System Initialized"}
 
 #TODO add supoport for filtering/searching for permissions
-@app.get("/permissions/",response_model=utils.Pagination)
+@app.get("/permissions/",response_model=crud.Pagination)
 async def get_permissions(
                         db: Session = Depends(get_db), 
                         q: Optional[str] = None,
                         params: Optional[Dict] = None,
                         page: int = Query(1, ge=1),
                         size: int = Query(10, ge=1, le=100)
-                        ) -> utils.Pagination:
-    if q:
-        permissions = await crud.search_objects(db=db,model=models.Permission,q=q)
-    elif params:
-        permissions = await crud.filter_objects(db=db,model=models.Permission,params=params)
-    else:
-        permissions = await crud.get_objects_list(db=db,model=models.Permission)
-    return utils.paginate(
-        items=[schemas.PermissionInDBBase.model_validate(p).model_dump() for p in permissions],
+                        ) -> crud.Pagination:
+    return await crud.paginate(
+        db=db,
+        model=models.Permission,
+        schema=schemas.PermissionInDBBase,
+        q=q,
+        params=params,
         page=page,
         size=size
     )
@@ -78,21 +76,19 @@ async def get_permission(permission_id: UUID4, db: Session = Depends(get_db)) ->
 async def create_role(role: schemas.RoleCreate, db: Session = Depends(get_db)) -> schemas.RoleInDBBase:
     return await crud.create_obj(db=db,model=models.Role,schema_model=role)
 
-@app.get("/roles/",response_model=utils.Pagination)
+@app.get("/roles/",response_model=crud.Pagination)
 async def get_roles(
                         db: Session = Depends(get_db), 
                         q: Optional[str] = None,
                         params: Optional[Dict] = None,
                         page: int = Query(1, ge=1),
-                        size: int = Query(10, ge=1, le=100)) -> utils.Pagination:
-    if q:
-        roles = await crud.search_objects(db=db,model=models.Role,q=q)
-    elif params:
-        roles = await crud.filter_objects(db=db,model=models.Role,params=params)
-    else:
-        roles = await crud.get_objects_list(db=db,model=models.Role)
-    return utils.paginate(
-        items=[schemas.RoleInDBBase.model_validate(r).model_dump() for r in roles],
+                        size: int = Query(10, ge=1, le=100)) -> crud.Pagination:
+    return await crud.paginate(
+        db=db,
+        model=models.Role,
+        schema=schemas.RoleInDBBase,
+        q=q,
+        params=params,
         page=page,
         size=size
     )

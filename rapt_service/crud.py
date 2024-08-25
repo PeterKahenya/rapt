@@ -4,9 +4,10 @@ from pydantic import UUID4, BaseModel
 import models
 import schemas
 from config import logger
-from typing import List, Sequence
+from typing import List, Any, Dict,Optional,Sequence
 from sqlalchemy import or_
 import datetime
+from fastapi import Query
 
 
 #create
@@ -100,3 +101,36 @@ async def update_role(db: Session, role_id: UUID4, role_update_data: schemas.Rol
     db.refresh(role)
     return role
 
+
+class Pagination(BaseModel):
+    total: int
+    page: int
+    size: int
+    data: List[Any]
+
+async def paginate(
+                    db: Session, 
+                    model: models.Model,
+                    schema: BaseModel,
+                    q: Optional[str] = None,
+                    params: Optional[Dict] = None,
+                    page: int = Query(1, ge=1),
+                    size: int = Query(10, ge=1, le=100),
+                ) -> Pagination:
+    if q:
+        data = await search_objects(db=db, model=model,q=q)
+    elif params:
+        data = await filter_objects(db=db, model=model,params=params)
+    else:
+        data = await get_objects_list(db=db, model=model)
+    offset = (page - 1) * size
+    total = len(data)
+    paginated_items = data[offset:offset + size]
+    paginated_items = [schema.model_validate(item) for item in paginated_items]
+    
+    return {
+        "total": total,
+        "page": page,
+        "size": size,
+        "data": paginated_items
+    }
