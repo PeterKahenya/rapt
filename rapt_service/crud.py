@@ -126,8 +126,9 @@ async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.Use
         if role_obj not in user.roles:
             user.roles.append(role_obj)
     logger.info(f"Updating user contacts with data: {user_update_data}")
-    if not user.contacts:
+    if user_update_data.contacts:
         user.contacts.clear()
+        db.commit()
         for contact in user_update_data.contacts:
             user_contact = await update_or_create_user_contact(db=db, user_update_data=contact)
             logger.info(f"User contact: {user_contact.to_dict()}")
