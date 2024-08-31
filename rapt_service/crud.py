@@ -29,6 +29,7 @@ async def get_objects_list(db: Session, model: models.Model) -> Sequence[models.
     return db.scalars(select(model)).all()
 
 async def filter_objects(db: Session, model: models.Model, params: dict) -> Sequence[models.Model]:
+    logger.info(f"Filtering {model.__tablename__} with params: {params}")
     try:
         CONDITION_MAP = {
             'eq': lambda col, val: col == val,
@@ -100,6 +101,40 @@ async def update_role(db: Session, role_id: UUID4, role_update_data: schemas.Rol
     db.commit()
     db.refresh(role)
     return role
+
+#update or create user
+async def update_or_create_user_contact(db: Session, user_update_data: schemas.Contact) -> models.User:
+    logger.info(f"Updating or creating user with data: {user_update_data}")
+    user = await filter_objects(db=db, model=models.User, params={"phone":user_update_data.phone})
+    if len(user) == 0:
+        user = await create_obj(db=db, model=models.User, schema_model=user_update_data)
+    else:
+        user = user[0]
+        user.name = user_update_data.name
+        db.commit()
+    db.refresh(user)
+    return user
+
+
+
+
+#update user
+async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.UserUpdate) -> models.User:
+    logger.info(f"Updating user with id: {user_id}")
+    user = await get_obj(db=db, model=models.User,  id=user_id)
+    user = await update_obj(db=db, model=models.User, id=user_id, schema_model=user_update_data)
+    for role in user_update_data.roles:
+        role_obj = await get_obj(db=db, model=models.Role,  id=role.id)
+        if role_obj not in user.roles:
+            user.roles.append(role_obj)
+    logger.info(f"Updating user contacts with data: {user_update_data}")
+    for contact in user_update_data.contacts:
+        user_contact = await update_or_create_user_contact(db=db, user_update_data=contact)
+        logger.info(f"User contact: {user_contact.to_dict()}")
+        user.contacts.append(user_contact)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 class Pagination(BaseModel):

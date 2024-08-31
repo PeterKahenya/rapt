@@ -88,7 +88,7 @@ async def test_add_user_contacts_roles_clientapp_models(db):
     assert role in db
     
     #test clientapp creation
-    clientapp = models.ClientApp(name="Test App",description="Test App Description",user=user)
+    clientapp = models.ClientApp(name="Test App",description="Test App Description",user_id=user.id)
     db.add(clientapp)
     db.commit()
     assert clientapp in db
@@ -113,7 +113,7 @@ async def test_add_user_contacts_roles_clientapp_models(db):
 
 """Test Schemas"""
 #test contenttype, permission, roles schemas
-def test_content_type_permissions_roles_schema(db):
+def test_user_contacts_roles_clientapp_schema(db):
     #test create contenttype object
     content_type = schemas.ContentTypeCreate(**{"content": "users"})
     assert content_type.content == "users"
@@ -160,6 +160,45 @@ def test_content_type_permissions_roles_schema(db):
     assert role_schema.permissions[0].name == role_get.permissions[0].name
     assert role_schema.permissions[1].name == role_get.permissions[1].name
     
+    #test create user object
+    user = schemas.UserCreate(**{
+        "phone": "1234567890",
+        "name": "Test User"
+    })
+    assert user.phone == "1234567890" and user.name == "Test User"
+    #test update user object
+    user_update = schemas.UserUpdate(**{
+        "phone": "1234567891",
+        "name": "Test User 1",
+        "is_superuser": True,
+        "roles": [role_schema.model_dump()]        
+    })
+    assert user_update.phone == "1234567891"
+    #test get user object
+    user_get = db.query(models.User).first()
+    user_schema = schemas.UserInDBBase.model_validate(user_get)
+    assert user_schema.phone == user_get.phone
+    
+    #test create clientapp object
+    clientapp = schemas.ClientAppCreate(**{
+        "name": "Test App",
+        "description": "Test App Description",
+        "user_id": user_get.id
+    })
+    assert clientapp.name == "Test App" and clientapp.description == "Test App Description"
+    #test get clientapp object
+    clientapp_get = db.execute(select(models.ClientApp)).scalar_one()
+    clientapp_schema = schemas.ClientAppInDBBase.model_validate(clientapp_get)
+    assert clientapp_schema.name == clientapp_get.name
+    #test clientapp update object
+    clientapp_update = schemas.ClientAppUpdate(**{
+        "name": "Test App 1",
+        "description": "Test App Description 1",
+        "user_id": user_get.id
+    })
+    assert clientapp_update.name == "Test App 1" and clientapp_update.description == "Test App Description 1"
+      
+    
 
 
 """Test CRUD"""
@@ -195,6 +234,30 @@ async def test_content_type_permissions_roles_crud(db):
     is_deleted = await crud.delete_obj(db=db,model=models.Role, id=role_db.id)
     assert role_db not in db
     
+    #create user
+    user_params = schemas.UserCreate(**{
+        "phone": "1234567896",
+        "name": "Test User"
+    })
+    user_db = await crud.create_obj(db,models.User,user_params)
+    assert user_db in db
+    #read user
+    user_get = await crud.get_obj(db=db,model=models.User,id=user_db.id)
+    assert user_get == user_db
+    with pytest.raises(sqlalchemy.exc.NoResultFound) as e:
+        await crud.get_obj(db=db, model=models.User,  id=uuid.uuid4())
+    users = await crud.get_objects_list(db=db,model=models.User)
+    assert user_db in users
+    
+    #create clientapp
+    clientapp_params = schemas.ClientAppCreate(**{
+        "name": "Test App",
+        "description": "Test App Description",
+        "user_id": user_db.id
+    })
+    clientapp_db = await crud.create_obj(db,models.ClientApp,clientapp_params)
+    assert clientapp_db in db
+    
     
 """Test API"""
 
@@ -216,7 +279,7 @@ async def test_initialize_api(client,db):
 
 #test CRUD api calls for permissions, roles
 @pytest.mark.asyncio
-async def test_permissions_roles_api(client,db):
+async def test_permissions_roles_users_clientapps_api(client,db):
     #get permissions
     response = client.get("/permissions/")
     assert response.status_code == 200
@@ -286,10 +349,80 @@ async def test_permissions_roles_api(client,db):
     assert response.json()["total"] >= 1
     assert response.json()["page"] == 1
     assert response.json()["size"] == 2
-    
     # test search
     response = client.get("/permissions/?q=Delete")
     assert response.status_code == 200
     assert len(response.json()["data"]) >= 1
     assert "Delete" in response.json()["data"][0]["name"]
     
+    #test list/filter/search users
+    response = client.get("/users/")
+    assert response.status_code == 200
+    assert len(response.json()["data"]) >= 1
+    response = client.get("/users/?q=Test")
+    assert response.status_code == 200
+    assert len(response.json()["data"]) >= 1
+    response = client.get("/users/",params={"name__ilike": "User"})
+    assert response.status_code == 200
+    assert len(response.json()["data"]) >= 1
+    user_id = db.execute(select(models.User)).scalars().first().id
+    response = client.get(f"/users/{user_id}")
+    assert response.status_code == 200
+    assert response.json()["name"] != None
+    response = client.put(f"/users/{user_id}",json={"name": "Test User 1"})
+    assert response.status_code == 200
+    assert response.json()["name"] == "Test User 1"
+    
+    #test user onboard/verification/login
+    response = client.post("/users/onboard/",json={"phone": "1234567890","name": "Test User"})
+    assert response.status_code == 200
+    assert response.json()["message"] == "Verification Code Sent"
+    #verify user by sending verification code
+    code = db.execute(select(models.User).where(models.User.phone == "1234567890")).scalar_one().phone_verification_code
+    response = client.post("/users/verify/",json={"phone": "1234567890","phone_verification_code": code})
+    assert response.status_code == 200
+    assert response.json()["phone"] == "1234567890"
+    
+    #test add contacts
+    contacts = [
+        {"name": "Test Contact 1","phone": "1234567991"},
+        {"name": "Test Contact 2","phone": "1234567992"}
+    ]
+    response = client.put(f"/users/{user_id}",json={"contacts": contacts})
+    
+    print(f"Contact add response: {response.json()}")
+    assert response.status_code == 200
+    assert response.json()["contacts"] != None
+    assert response.json()["contacts"][0]["name"] == "Test Contact 1" \
+            or response.json()["contacts"][0]["name"] == "Test Contact 2"
+    
+    #test add roles
+    role_db = db.execute(select(models.Role)).scalars().first()
+    # print(role_db)
+    response = client.put(f"/users/{user_id}",json={"roles": [role_db.to_dict()]})
+    assert response.status_code == 200
+    assert role_db in db.execute(select(models.User).where(models.User.id == user_id)).scalar_one().roles
+
+    #test create clientapp
+    response = client.post("/clientapps/",json={"name": "Test App","description": "Test App Description","user_id": str(user_id)})
+    print(f"Clientapp create response: {response.json()}")  
+    assert response.status_code == 201
+    assert response.json()["name"] == "Test App"
+    #test get clientapps
+    response = client.get("/clientapps/")
+    assert response.status_code == 200
+    assert len(response.json()["data"]) >= 1
+    #test get single clientapp
+    clientapp_id = uuid.UUID(response.json()["data"][0]["id"])
+    response = client.get(f"/clientapps/{str(clientapp_id)}")
+    assert response.status_code == 200
+    assert response.json()["name"] != None
+    #test update clientapp
+    response = client.put(f"/clientapps/{clientapp_id}",json={"name": "Test App 1","description": "Test App Description 1","user_id": str(user_id)})
+    assert response.status_code == 200
+    assert response.json()["name"] == "Test App 1"
+    #test delete clientapp
+    response = client.delete(f"/clientapps/{clientapp_id}")
+    assert response.status_code == 204
+    clientapp = db.execute(select(models.ClientApp).where(models.ClientApp.id == clientapp_id)).scalar_one_or_none()
+    assert clientapp is None

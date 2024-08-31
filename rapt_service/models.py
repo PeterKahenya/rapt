@@ -174,16 +174,16 @@ class ClientApp(Model):
 
 
     #set the client id and secret at creation
-    def __init__(self,name:str,description:str,user:User):
+    def __init__(self,name:str,description:str,user_id:uuid.UUID):
         if not name:
             raise ValueError("App name cannot be empty")
-        if not user:
-            raise ValueError("User cannot be empty")
+        if not user_id:
+            raise ValueError("User ID cannot be empty")
         if not description:
             raise ValueError("Description cannot be empty")
 
         self.name = name
-        self.user = user
+        self.user_id = user_id
         self.description = description
         self.client_id = utils.generate_client_id()
         self.client_secret = utils.generate_client_secret()
