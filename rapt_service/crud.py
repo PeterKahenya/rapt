@@ -116,8 +116,6 @@ async def update_or_create_user_contact(db: Session, user_update_data: schemas.C
     return user
 
 
-
-
 #update user
 async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.UserUpdate) -> models.User:
     logger.info(f"Updating user with id: {user_id}")
@@ -128,10 +126,12 @@ async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.Use
         if role_obj not in user.roles:
             user.roles.append(role_obj)
     logger.info(f"Updating user contacts with data: {user_update_data}")
-    for contact in user_update_data.contacts:
-        user_contact = await update_or_create_user_contact(db=db, user_update_data=contact)
-        logger.info(f"User contact: {user_contact.to_dict()}")
-        user.contacts.append(user_contact)
+    if not user.contacts:
+        user.contacts.clear()
+        for contact in user_update_data.contacts:
+            user_contact = await update_or_create_user_contact(db=db, user_update_data=contact)
+            logger.info(f"User contact: {user_contact.to_dict()}")
+            user.contacts.append(user_contact)
     db.commit()
     db.refresh(user)
     return user
