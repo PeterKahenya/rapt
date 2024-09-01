@@ -165,14 +165,17 @@ class User(Model):
         """
         logger.info(f"Verifying JWT token {token}")
         try:
-            payload = jwt.decode(jwt=token,key=secret,algorithms=[algorithm],options={"verify_exp":True})
+            payload = jwt.decode(jwt=token,key=secret,algorithms=[algorithm],options={"verify_exp":True,"verify_signature":True,"required":["exp","sub"]})
             return payload.get("sub",None)
+        except jwt.InvalidAlgorithmError:
+            logger.error(f"JWT token invalid algorithm: {algorithm} on token: {token}")
+            raise jwt.InvalidAlgorithmError
         except jwt.ExpiredSignatureError:
-            logger.error(f"JWT token {token} expired")
-            return None
-        except jwt.InvalidTokenError:
-            logger.error(f"JWT token {token} invalid")
-            return None
+            logger.error(f"JWT expired signature on token: {token}")
+            raise jwt.ExpiredSignatureError
+        except jwt.InvalidTokenError as e:
+            logger.error(f"JWT invalid token: {token} error: {e}")
+            raise jwt.InvalidTokenError
 
 
 class ClientApp(Model):

@@ -1,9 +1,22 @@
+import jwt
 from .conftest import settings
 import models
 from sqlalchemy.sql import select
 import pytest
 
 pytest_plugins = ('pytest_asyncio',)
+
+# test to_dict method of models
+def test_to_dict_method(db):
+    content_type = models.ContentType(content = "clientapps")
+    db.add(content_type)
+    db.commit()
+    db.refresh(content_type)
+    dict_content_type = content_type.to_dict()
+    assert dict_content_type["id"] == str(content_type.id)
+    assert dict_content_type["content"] == "clientapps"
+    assert dict_content_type["created_at"] == content_type.created_at.isoformat()
+    assert dict_content_type["updated_at"] == None
 
 # test content_type model
 def test_content_type_model(db):
@@ -73,8 +86,14 @@ async def test_user_model(db):
     # test jwt token generation and validation
     token = user.create_jwt_token(secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm,expiry_minutes=settings.access_token_expiry_minutes)
     assert user.phone == models.User.verify_jwt_token(db,token,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm)
-    assert models.User.verify_jwt_token(db,token,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm+"1") == None
-    assert models.User.verify_jwt_token(db,token,secret="lsdslkdsldk",algorithm=settings.jwt_algorithm) == None
+    with pytest.raises(jwt.InvalidAlgorithmError):
+        models.User.verify_jwt_token(db,token,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm+"1")
+    with pytest.raises(jwt.ExpiredSignatureError):
+        expired_token = user.create_jwt_token(secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm,expiry_minutes=-10)
+        models.User.verify_jwt_token(db,expired_token,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm)
+    with pytest.raises(jwt.InvalidTokenError):
+        models.User.verify_jwt_token(db,token,secret="lsdslkdsldk",algorithm=settings.jwt_algorithm)
+    
 
 # test clientapp model and user relationship
 def test_clientapp_model(db):
@@ -99,6 +118,14 @@ def test_clientapp_model(db):
     assert clientapp2.client_secret != None
     assert clientapp2.client_id != clientapp.client_id
     assert clientapp2.client_secret != clientapp.client_secret
+    
+    # test clientapp must have a user, name and description
+    with pytest.raises(ValueError):
+        models.ClientApp(name=None,description="Test App Description",user_id=user.id)
+    with pytest.raises(ValueError):
+        models.ClientApp(name="Test App",description="Test App Description",user_id=None)
+    with pytest.raises(ValueError):
+        models.ClientApp(name="Test App",description=None,user_id=user.id)
 
 # test chatroom model and user relationship
 def test_chatroom_model(db):
