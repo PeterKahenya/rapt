@@ -1,4 +1,4 @@
-from .setup import db, settings
+from .conftest import settings
 import models
 from sqlalchemy.sql import select
 import pytest

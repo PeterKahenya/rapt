@@ -1,3 +1,7 @@
+import pytest
+from sqlalchemy import create_engine,text
+from sqlalchemy.orm import sessionmaker
+import models
 from pydantic_settings import BaseSettings
 from pydantic_settings import BaseSettings
 import pytest
@@ -22,6 +26,10 @@ class Settings(BaseSettings):
 settings = Settings()
 TEST_DATABASE_URL = f"{settings.mysql_driver}://{settings.test_database_user}:{settings.test_database_password}@{settings.test_database_host}:{settings.test_database_port}"
 
+
+
+SessionLocal = None
+engine = None
 
 @pytest.fixture(scope="session")
 def db():
