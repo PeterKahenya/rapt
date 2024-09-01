@@ -146,6 +146,7 @@ jobs:
                   SITE_PORT=${{ env.SITE_PORT }}
                   PHONE_VERIFICATION_CODE_LENGTH=${{ env.PHONE_VERIFICATION_CODE_LENGTH }}
                   PHONE_VERIFICATION_CODE_EXPIRY_MILLISECONDS=${{ env.PHONE_VERIFICATION_CODE_EXPIRY_MILLISECONDS }}
+                  JWT_SECRET_KEY=${{ env.JWT_SECRET_KEY }}
                   EOF
         
                   kubectl delete secrets rapt-prod-env-secrets || true
