@@ -3,7 +3,7 @@ import datetime
 from sqlalchemy import Column,Uuid,String,ForeignKey,Table,DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column,relationship,backref,Session
 from typing import Optional,List
-from config import settings,logger
+from config import logger
 import jwt
 import utils
 
