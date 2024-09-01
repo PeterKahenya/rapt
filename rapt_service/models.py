@@ -3,9 +3,10 @@ import datetime
 from sqlalchemy import Column,Uuid,String,ForeignKey,Table,DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column,relationship,backref,Session
 from typing import Optional,List
-import utils
 from config import settings,logger
 import jwt
+import utils
+
 
 class Model(DeclarativeBase):
     def to_dict(self):
@@ -76,6 +77,13 @@ contacts_association = Table(
     Column('contact_id', Uuid, ForeignKey('users.id'), primary_key=True)
 )
 
+chatroom_members_association = Table(
+    'chatroom_members',
+    Model.metadata,
+    Column('user_id', Uuid, ForeignKey('users.id'), primary_key=True),
+    Column('chatroom_id', Uuid, ForeignKey('chatrooms.id'), primary_key=True)
+)
+
 
 class User(Model):
     __tablename__ = "users"
@@ -97,12 +105,18 @@ class User(Model):
         secondaryjoin=id == contacts_association.c.contact_id,
         backref=backref('contact_of', lazy='dynamic')
     )
-    roles = relationship(
+    roles: Mapped[List[Role]] = relationship(
         'Role',
         secondary=user_roles_association,
         back_populates='users'
     )
     client_apps: Mapped[List["ClientApp"]] = relationship("ClientApp",back_populates="user")
+    chatrooms:Mapped[List["ChatRoom"]] = relationship(
+        'ChatRoom',
+        secondary=chatroom_members_association,
+        back_populates='members'
+    )
+    chats: Mapped[List["Chat"]] = relationship('Chat',back_populates='sender')
     
     async def create_verification_code(self,db:Session):
         """
@@ -187,5 +201,86 @@ class ClientApp(Model):
         self.description = description
         self.client_id = utils.generate_client_id()
         self.client_secret = utils.generate_client_secret()
+        
 
 
+
+class ChatRoom(Model):
+    __tablename__ = "chatrooms"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True,unique=True,default=uuid.uuid4)
+    fcm_room_id: Mapped[str] = mapped_column(String(500),unique=True)
+    socket_room_id: Mapped[str] = mapped_column(String(500),unique=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
+    members: Mapped[List["User"]] = relationship(
+        'User',
+        secondary=chatroom_members_association,
+        back_populates='chatrooms'
+    )
+    group: Mapped["Group"] = relationship("Group", uselist=False, back_populates="chatroom")
+    room_chats: Mapped[List["Chat"]] = relationship('Chat',back_populates='room')
+
+    #ensure that the chatroom has at least two members
+    def __init__(self,fcm_room_id:str,socket_room_id:str,members:List[User]):
+        if not fcm_room_id:
+            raise ValueError("FCM Room ID cannot be empty")
+        if not socket_room_id:
+            raise ValueError("Socket Room ID cannot be empty")
+        if len(members) < 2:
+            raise ValueError("Chatroom must have at least two members")
+        
+        self.fcm_room_id = fcm_room_id
+        self.socket_room_id = socket_room_id
+        self.members = members
+
+
+class Group(Model):
+    __tablename__ = "groups"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True,unique=True,default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str] = mapped_column(String(500))
+    created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
+    chatroom_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chatrooms.id"),unique=True,nullable=False)
+    chatroom: Mapped[ChatRoom] = relationship("ChatRoom",back_populates="group")
+
+
+class Chat(Model):
+    __tablename__ = "chats"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True,unique=True,default=uuid.uuid4)
+    message: Mapped[str] = mapped_column(String(500),nullable=False)
+    is_read: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
+    
+    sender_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"),nullable=False)
+    sender: Mapped[User] = relationship('User',back_populates='chats')
+    room_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chatrooms.id"),nullable=False)
+    room: Mapped[ChatRoom] = relationship('ChatRoom',back_populates='room_chats')
+    media: Mapped[List["Media"]] = relationship("Media",back_populates="chat")
+
+    #ensure that a user is a member of the chatroom before sending a message
+    def __init__(self,message:str,sender:User,room:ChatRoom):
+        if not message:
+            raise ValueError("Message cannot be empty")
+        if not sender:
+            raise ValueError("Sender cannot be empty")
+        if not room:
+            raise ValueError("Room cannot be empty")
+        if sender not in room.members:
+            raise ValueError("Sender must be a member of the room")
+        
+        self.message = message
+        self.sender = sender
+        self.room = room
+
+
+class Media(Model):
+    __tablename__ = "media"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True,unique=True,default=uuid.uuid4)
+    link: Mapped[str] = mapped_column(String(1024))
+    file_type: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
+    chat_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chats.id"))
+    chat: Mapped[Chat] = relationship('Chat',back_populates='media')
