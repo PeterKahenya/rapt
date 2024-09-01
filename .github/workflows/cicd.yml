@@ -147,6 +147,9 @@ jobs:
                   PHONE_VERIFICATION_CODE_LENGTH=${{ env.PHONE_VERIFICATION_CODE_LENGTH }}
                   PHONE_VERIFICATION_CODE_EXPIRY_MILLISECONDS=${{ env.PHONE_VERIFICATION_CODE_EXPIRY_MILLISECONDS }}
                   JWT_SECRET_KEY="${{ env.JWT_SECRET_KEY }}"
+                  JWT_ALGORITHM=${{ env.JWT_ALGORITHM }}
+                  ACCESS_TOKEN_EXPIRY_MINUTES=${{ env.ACCESS_TOKEN_EXPIRY_MINUTES }}
+
                   EOF
         
                   kubectl delete secrets rapt-prod-env-secrets || true
