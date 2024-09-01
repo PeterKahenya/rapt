@@ -18,12 +18,14 @@ class Model(DeclarativeBase):
                 object_dict[key] = str(value)
         return object_dict
 
+
 role_permissions_association = Table(
     'role_permissions',
     Model.metadata,
     Column('role_id', Uuid, ForeignKey('roles.id',ondelete="CASCADE"), primary_key=True),
     Column('permission_id', Uuid, ForeignKey('permissions.id',ondelete="CASCADE"), primary_key=True)
 )
+
 
 class ContentType(Model):
     __tablename__ = "content_types"
@@ -62,7 +64,6 @@ class Role(Model):
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)   
     permissions: Mapped[List["Permission"]] = relationship(secondary=role_permissions_association,back_populates='roles')
-    
     users: Mapped[List["User"]] = relationship(
         'User',
         secondary=user_roles_association,
@@ -76,6 +77,7 @@ contacts_association = Table(
     Column('user_id', Uuid, ForeignKey('users.id'), primary_key=True),
     Column('contact_id', Uuid, ForeignKey('users.id'), primary_key=True)
 )
+
 
 chatroom_members_association = Table(
     'chatroom_members',
@@ -117,13 +119,13 @@ class User(Model):
         back_populates='members'
     )
     chats: Mapped[List["Chat"]] = relationship('Chat',back_populates='sender')
-    
-    async def create_verification_code(self,db:Session):
+
+    async def create_verification_code(self,db:Session,code_length:int,code_expiry_seconds:int) -> "User":
         """
             Create the verification code for the user and set it's expiry date and time
         """
-        code = utils.generate_random_string(length=settings.verification_code_length)
-        expiry_at = datetime.datetime.now() + datetime.timedelta(milliseconds=settings.verification_code_expiry_milliseconds)
+        code = utils.generate_random_string(length=code_length)
+        expiry_at = datetime.datetime.now() + datetime.timedelta(seconds=code_expiry_seconds)
         self.phone_verification_code = code
         self.phone_verification_code_expiry_at = expiry_at
         db.add(self)
@@ -131,7 +133,6 @@ class User(Model):
         db.refresh(self)
         logger.info(f"User {self.phone} verification code {code} created, expires at {expiry_at}")
         return self
-    
 
     async def validate_verification_code(self,code:str):
         """
@@ -149,22 +150,22 @@ class User(Model):
             logger.info(f"User {self.phone} verification failed")
             return False
 
-    def create_jwt_token(self):
+    def create_jwt_token(self,secret:str,algorithm:str,expiry_minutes:int) -> str:
         """
         Create a JWT token for the user, encoding the phone number and expiry time and return it
         """
         logger.info(f"Creating JWT token for user {self.phone}")
-        expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=settings.access_token_expiry_minutes)
-        return jwt.encode({"sub":self.phone,"exp":expire},settings.jwt_secret_key,algorithm=settings.jwt_algorithm)
+        expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=expiry_minutes)
+        return jwt.encode({"sub":self.phone,"exp":expire},key=secret,algorithm=algorithm)
     
     @staticmethod
-    def verify_jwt_token(db:Session,token:str) -> Optional[str]:
+    def verify_jwt_token(db:Session,token:str,secret:str,algorithm) -> Optional[str]:
         """
             Verify the JWT token and return the phone number
         """
         logger.info(f"Verifying JWT token {token}")
         try:
-            payload = jwt.decode(token,settings.jwt_secret_key,algorithms=[settings.jwt_algorithm])
+            payload = jwt.decode(jwt=token,key=secret,algorithms=[algorithm],options={"verify_exp":True})
             return payload.get("sub",None)
         except jwt.ExpiredSignatureError:
             logger.error(f"JWT token {token} expired")
@@ -186,7 +187,6 @@ class ClientApp(Model):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     user: Mapped[User] = relationship("User",back_populates="client_apps")
 
-
     #set the client id and secret at creation
     def __init__(self,name:str,description:str,user_id:uuid.UUID):
         if not name:
@@ -195,15 +195,12 @@ class ClientApp(Model):
             raise ValueError("User ID cannot be empty")
         if not description:
             raise ValueError("Description cannot be empty")
-
         self.name = name
         self.user_id = user_id
         self.description = description
         self.client_id = utils.generate_client_id()
         self.client_secret = utils.generate_client_secret()
-        
-
-
+    
 
 class ChatRoom(Model):
     __tablename__ = "chatrooms"
@@ -220,15 +217,18 @@ class ChatRoom(Model):
     group: Mapped["Group"] = relationship("Group", uselist=False, back_populates="chatroom")
     room_chats: Mapped[List["Chat"]] = relationship('Chat',back_populates='room')
 
-    #ensure that the chatroom has at least two members
+    #ensure that the chatroom has at least two members and members must be unique
     def __init__(self,fcm_room_id:str,socket_room_id:str,members:List[User]):
         if not fcm_room_id:
             raise ValueError("FCM Room ID cannot be empty")
         if not socket_room_id:
             raise ValueError("Socket Room ID cannot be empty")
+        # chatroom has at least two members
         if len(members) < 2:
             raise ValueError("Chatroom must have at least two members")
-        
+        # members must be unique
+        if len(members) != len(set(members)):
+            raise ValueError("Members must be unique")
         self.fcm_room_id = fcm_room_id
         self.socket_room_id = socket_room_id
         self.members = members
@@ -252,7 +252,6 @@ class Chat(Model):
     is_read: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
-    
     sender_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"),nullable=False)
     sender: Mapped[User] = relationship('User',back_populates='chats')
     room_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chatrooms.id"),nullable=False)
@@ -260,26 +259,26 @@ class Chat(Model):
     media: Mapped[List["Media"]] = relationship("Media",back_populates="chat")
 
     #ensure that a user is a member of the chatroom before sending a message
-    def __init__(self,message:str,sender:User,room:ChatRoom):
+    def __init__(self,message:str,sender:User=None,room:ChatRoom=None,**kwargs):
         if not message:
             raise ValueError("Message cannot be empty")
-        if not sender:
+        if not sender and not kwargs.get("sender_id",None):
             raise ValueError("Sender cannot be empty")
-        if not room:
+        if not room and not kwargs.get("room_id",None):
             raise ValueError("Room cannot be empty")
         if sender not in room.members:
-            raise ValueError("Sender must be a member of the room")
+            raise ValueError("Sender must be a member of the room")   
         
         self.message = message
-        self.sender = sender
-        self.room = room
+        self.sender_id = sender.id
+        self.room_id = room.id
 
 
 class Media(Model):
     __tablename__ = "media"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True,unique=True,default=uuid.uuid4)
-    link: Mapped[str] = mapped_column(String(1024))
-    file_type: Mapped[str] = mapped_column(String(100))
+    link: Mapped[str] = mapped_column(String(1024),nullable=False)
+    file_type: Mapped[str] = mapped_column(String(100),nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
     chat_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chats.id"))
