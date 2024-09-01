@@ -17,7 +17,7 @@ class AppSettings(BaseSettings):
     mysql_password: str
     mysql_database: str
     verification_code_length: int = 6
-    verification_code_expiry_milliseconds: int = 300000
+    verification_code_expiry_seconds: int = 300
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     access_token_expiry_minutes: int = 60
