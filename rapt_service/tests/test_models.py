@@ -48,6 +48,7 @@ async def test_user_model(db):
     db.refresh(user)
     assert contact1 in user.contacts
     assert contact2 in user.contacts
+    
     role = db.execute(select(models.Role).where(models.Role.name == "Admin")).scalar_one()
     role2 = models.Role(name="User",description="User Role")
     db.add(role2)
@@ -59,7 +60,8 @@ async def test_user_model(db):
     db.refresh(user)
     assert role in user.roles
     assert role2 in user.roles
-    #test verification code generation and validation
+    
+    # test verification code generation and validation
     user = await user.create_verification_code(db,settings.verification_code_length,settings.verification_code_expiry_seconds)
     assert user.phone_verification_code != None
     assert user.phone_verification_code_expiry_at != None
@@ -67,7 +69,8 @@ async def test_user_model(db):
     assert validation_status == True
     validation_status = await user.validate_verification_code("123456")
     assert validation_status == False
-    #test jwt token generation and validation
+    
+    # test jwt token generation and validation
     token = user.create_jwt_token(secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm,expiry_minutes=settings.access_token_expiry_minutes)
     assert user.phone == models.User.verify_jwt_token(db,token,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm)
     assert models.User.verify_jwt_token(db,token,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm+"1") == None
@@ -86,6 +89,7 @@ def test_clientapp_model(db):
     assert clientapp.client_id != None
     assert clientapp.client_secret != None
     assert clientapp in user.client_apps
+    
     # test client_id and client_secret generation
     clientapp2 = models.ClientApp(name="Test App 2",description="Test App Description",user_id=user.id)
     db.add(clientapp2)
@@ -95,7 +99,6 @@ def test_clientapp_model(db):
     assert clientapp2.client_secret != None
     assert clientapp2.client_id != clientapp.client_id
     assert clientapp2.client_secret != clientapp.client_secret
-    
 
 # test chatroom model and user relationship
 def test_chatroom_model(db):
@@ -153,6 +156,7 @@ def test_chat_model(db):
     assert chat.message == "Test Chat"
     assert chat in chatroom.room_chats
     assert chat in sender.chats
+    
     with pytest.raises(ValueError):
         models.Chat(message=None,room=chatroom,sender=sender)
     with pytest.raises(ValueError):
@@ -161,7 +165,8 @@ def test_chat_model(db):
         models.Chat(message="Test Chat",room=None,sender=sender)
     with pytest.raises(ValueError):
         models.Chat(message="Test Chat",room=None,sender=None)
-    #test sender must be a member of the chatroom
+
+    # test sender must be a member of the chatroom
     sender2 = db.execute(select(models.User).where(models.User.name == "Test User 2")).scalar_one()
     with pytest.raises(ValueError):
         models.Chat(message="Test Chat",room=chatroom,sender=sender2)
