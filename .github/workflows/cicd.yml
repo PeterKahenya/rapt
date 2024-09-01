@@ -134,20 +134,18 @@ jobs:
         
             -   name: Update k8s secrets
                 run: |
-                  cat << EOF >> ./.env.prod
-                  MYSQL_DRIVER=${{ env.MYSQL_DRIVER }}
-                  MYSQL_HOST=${{ env.MYSQL_HOST }}
-                  MYSQL_USER=${{ env.MYSQL_USER }}
-                  MYSQL_PASSWORD=${{ env.MYSQL_PASSWORD }}
-                  MYSQL_DATABASE=${{ env.MYSQL_DATABASE }}
-                  MYSQL_PORT=${{ env.MYSQL_PORT }}
-                  SERVICE_PORT=${{ env.SERVICE_PORT }}
-                  SERVICE_NAME=${{ env.SERVICE_NAME }}
-                  PHONE_VERIFICATION_CODE_LENGTH=${{ env.PHONE_VERIFICATION_CODE_LENGTH }}
-                  JWT_SECRET_KEY=${{ env.JWT_SECRET_KEY }}
-                  JWT_ALGORITHM=${{ env.JWT_ALGORITHM }}
-                  ACCESS_TOKEN_EXPIRY_MINUTES=${{ env.ACCESS_TOKEN_EXPIRY_MINUTES }}
-                  EOF
+                  echo "MYSQL_DRIVER=${{ env.MYSQL_DRIVER }}" >> ./.env.prod
+                  echo "MYSQL_HOST=${{ env.MYSQL_HOST }}" >> ./.env.prod
+                  echo "MYSQL_USER=${{ env.MYSQL_USER }}" >> ./.env.prod
+                  echo "MYSQL_PASSWORD=${{ env.MYSQL_PASSWORD }}" >> ./.env.prod
+                  echo "MYSQL_DATABASE=${{ env.MYSQL_DATABASE }}" >> ./.env.prod
+                  echo "MYSQL_PORT=${{ env.MYSQL_PORT }}" >> ./.env.prod
+                  echo "SERVICE_PORT=${{ env.SERVICE_PORT }}" >> ./.env.prod
+                  echo "SERVICE_NAME=${{ env.SERVICE_NAME }}" >> ./.env.prod
+                  echo "PHONE_VERIFICATION_CODE_LENGTH=${{ env.PHONE_VERIFICATION_CODE_LENGTH }}" >> ./.env.prod
+                  echo "JWT_SECRET_KEY=${{ env.JWT_SECRET_KEY }}" >> ./.env.prod
+                  echo "JWT_ALGORITHM=${{ env.JWT_ALGORITHM }}" >> ./.env.prod
+                  echo "ACCESS_TOKEN_EXPIRY_MINUTES=${{ env.ACCESS_TOKEN_EXPIRY_MINUTES }}" >> ./.env.prod
         
                   kubectl delete secrets rapt-prod-env-secrets || true
                   kubectl create secret generic rapt-prod-env-secrets --from-env-file ./.env.prod
