@@ -26,8 +26,6 @@ class Settings(BaseSettings):
 settings = Settings()
 TEST_DATABASE_URL = f"{settings.mysql_driver}://{settings.test_database_user}:{settings.test_database_password}@{settings.test_database_host}:{settings.test_database_port}"
 
-
-
 SessionLocal = None
 engine = None
 
