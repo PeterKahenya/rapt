@@ -51,7 +51,7 @@ class Permission(Model):
 user_roles_association = Table(
     'user_roles',
     Model.metadata,
-    Column('user_id', Uuid, ForeignKey('users.id'), primary_key=True),
+    Column('user_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True),
     Column('role_id', Uuid, ForeignKey('roles.id'), primary_key=True)
 )
 
@@ -74,7 +74,7 @@ class Role(Model):
 contacts_association = Table(
     'contacts',
     Model.metadata,
-    Column('user_id', Uuid, ForeignKey('users.id'), primary_key=True),
+    Column('user_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True),
     Column('contact_id', Uuid, ForeignKey('users.id'), primary_key=True)
 )
 
@@ -83,7 +83,7 @@ chatroom_members_association = Table(
     'chatroom_members',
     Model.metadata,
     Column('user_id', Uuid, ForeignKey('users.id'), primary_key=True),
-    Column('chatroom_id', Uuid, ForeignKey('chatrooms.id'), primary_key=True)
+    Column('chatroom_id', Uuid, ForeignKey('chatrooms.id',ondelete="CASCADE"),primary_key=True)
 )
 
 
@@ -284,5 +284,5 @@ class Media(Model):
     file_type: Mapped[str] = mapped_column(String(100),nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
-    chat_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chats.id"))
+    chat_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chats.id",ondelete="CASCADE"),nullable=False)
     chat: Mapped[Chat] = relationship('Chat',back_populates='media')
