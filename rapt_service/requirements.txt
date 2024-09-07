@@ -12,4 +12,4 @@ pyjwt
 honeybadger
 coverage
 flower
-fastapi-pagination
+faker
