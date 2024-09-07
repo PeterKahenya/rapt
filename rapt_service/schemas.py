@@ -156,18 +156,22 @@ class GroupInDBBase(ModelInDBBase):
     name: str
     description: str
     chatroom: ChatRoomInDBBase
-    
+
+class MediaObject(BaseModel):
+    link: str
+    file_type: str
+
 # chat schema
 class ChatCreate(BaseModel):
     message: str
     sender_id: UUID4
     room_id: UUID4
-    media: Optional[List[ModelBase]] = None
+    media: Optional[List[MediaObject]] = None
 
 class ChatUpdate(BaseModel):
     message: Optional[str] = None
     media: Optional[List[ModelBase]] | None = None
-    is_read: Optional[bool] = None
+    is_read: Optional[bool] = False
 
 class ChatInDBBase(ModelInDBBase):
     message: str
