@@ -296,7 +296,7 @@ async def paginate(
                     params: Optional[Dict] = None,
                     page: int = Query(1, ge=1),
                     size: int = Query(10, ge=1, le=100),
-                    sort_by: str = Query("created_at,asc")
+                    sort_by: str = "created_at,asc"
                 ) -> schemas.ListResponse:
     if q:
         data = await search_objects(db=db, model=model,q=q)
