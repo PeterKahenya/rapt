@@ -98,12 +98,16 @@ class UserInDBBase(ModelInDBBase):
     roles: List[RoleInDBBase] = []
     client_apps: List[ModelBase] = []
 
-class UserLogin(BaseModel):
-    phone: str
-
 class UserVerify(BaseModel):
     phone: str
     phone_verification_code: str
+    
+class AccessToken(BaseModel):
+    access_token: str
+    token_type: str = "Bearer"
+    
+class RefreshToken(BaseModel):
+    access_token: str
 
 # client app schema
 class ClientAppCreate(BaseModel):
