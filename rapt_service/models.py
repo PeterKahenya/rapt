@@ -1,8 +1,9 @@
 import uuid
 import datetime
+from fastapi import HTTPException
 from sqlalchemy import Column,Uuid,String,ForeignKey,Table,DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column,relationship,backref,Session
-from typing import Optional,List
+from typing import Optional,List, Tuple
 from config import logger
 import jwt
 import utils
@@ -134,7 +135,7 @@ class User(Model):
         logger.info(f"User {self.phone} verification code {code} created, expires at {expiry_at}")
         return self
 
-    async def validate_verification_code(self,code:str):
+    async def validate_verification_code(self,code:str) -> bool:
         """
             Validate the verification code and activate the user
         """
@@ -149,33 +150,49 @@ class User(Model):
         else:
             logger.info(f"User {self.phone} verification failed")
             return False
+    
+    async def has_perm(self,permission:str) -> bool:
+        """
+            Check if the user has the permission
+        """
+        for role in self.roles:
+            for perm in role.permissions:
+                if perm.codename == permission:
+                    return True
+        return False
 
-    def create_jwt_token(self,secret:str,algorithm:str,expiry_minutes:int) -> str:
+    def create_jwt_token(self,clientapp: "ClientApp", secret:str,algorithm:str,expiry_minutes:int) -> str:
         """
         Create a JWT token for the user, encoding the phone number and expiry time and return it
         """
         logger.info(f"Creating JWT token for user {self.phone}")
         expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=expiry_minutes)
-        return jwt.encode({"sub":self.phone,"exp":expire},key=secret,algorithm=algorithm)
+        payload = {
+            "sub": self.phone,
+            "exp": expire, 
+            "client_id": clientapp.client_id,
+            "client_secret": clientapp.client_secret
+        }
+        return jwt.encode(payload=payload,key=secret,algorithm=algorithm)
     
     @staticmethod
-    def verify_jwt_token(db:Session,token:str,secret:str,algorithm) -> Optional[str]:
+    def verify_jwt_token(db:Session,token:str,secret:str,algorithm) -> Tuple[str,str,str] | None:
         """
             Verify the JWT token and return the phone number
         """
         logger.info(f"Verifying JWT token {token}")
         try:
             payload = jwt.decode(jwt=token,key=secret,algorithms=[algorithm],options={"verify_exp":True,"verify_signature":True,"required":["exp","sub"]})
-            return payload.get("sub",None)
+            return payload.get("sub",None),payload.get("client_id",None),payload.get("client_secret",None)
         except jwt.InvalidAlgorithmError:
             logger.error(f"JWT token invalid algorithm: {algorithm} on token: {token}")
-            raise jwt.InvalidAlgorithmError
+            raise HTTPException(status_code=401,detail={"message":"Invalid access token"})
         except jwt.ExpiredSignatureError:
             logger.error(f"JWT expired signature on token: {token}")
-            raise jwt.ExpiredSignatureError
+            raise HTTPException(status_code=401,detail={"message":"Access Token expired"})
         except jwt.InvalidTokenError as e:
             logger.error(f"JWT invalid token: {token} error: {e}")
-            raise jwt.InvalidTokenError
+            raise HTTPException(status_code=401,detail={"message":"Invalid access token"})
 
 
 class ClientApp(Model):
@@ -184,7 +201,7 @@ class ClientApp(Model):
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(String(500))
     client_id: Mapped[str] = mapped_column(String(100),unique=True,default=utils.generate_client_id)
-    client_secret: Mapped[str] = mapped_column(String(100),unique=True,default=utils.generate_client_secret)
+    client_secret: Mapped[str] = mapped_column(String(100),default=utils.generate_client_secret)
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
