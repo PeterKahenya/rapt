@@ -1,15 +1,13 @@
-from os import link
 import pytest
 from sqlalchemy import create_engine, select,text
 from sqlalchemy.orm import sessionmaker
 import models
 from pydantic_settings import BaseSettings
-from pydantic_settings import BaseSettings
-import pytest
-from sqlalchemy import create_engine,text
-from sqlalchemy.orm import sessionmaker
-import models
 from faker import Faker
+from api import app,get_db
+from fastapi.testclient import TestClient
+from init import initialize_db
+
 
 
 class Settings(BaseSettings):
@@ -113,3 +111,14 @@ def db():
     session.close()
     models.Model.metadata.drop_all(bind=engine)
     engine.dispose()
+    
+@pytest.fixture(scope="session")
+def client(db):
+    def get_test_db():
+        try:
+            initialize_db(db)
+            yield db
+        finally:
+            pass
+    app.dependency_overrides[get_db] = get_test_db
+    yield TestClient(app)

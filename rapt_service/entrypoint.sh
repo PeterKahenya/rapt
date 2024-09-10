@@ -27,11 +27,14 @@ echo "----------DATABASE CREATED------------------------"
 echo "----------APPYING DATABASE MIGRATIONS-------------"
 python -m alembic upgrade head
 
-echo "----------INITIALIZE APPLICATION------------------"
+echo "----------INITIALIZE DATABASE------------------"
+python init.py
 
 echo "----------CREATING SUPERUSER----------------------"
 
 echo "service_port: ${SERVICE_PORT}"
+
+
 
 echo "------STARTING GUNICORN AT 0.0.0.0:${SERVICE_PORT}--"
 uvicorn api:app --host 0.0.0.0 --port "$SERVICE_PORT" --workers 4
