@@ -98,6 +98,7 @@ class User(Model):
     is_active: Mapped[bool] = mapped_column(default=False)
     is_superuser: Mapped[bool] = mapped_column(default=False)
     is_verified: Mapped[bool] = mapped_column(default=False)
+    access_token: Mapped[Optional[str]] = mapped_column(String(500))
     last_seen: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime())
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
@@ -173,7 +174,9 @@ class User(Model):
             "client_id": clientapp.client_id,
             "client_secret": clientapp.client_secret
         }
-        return jwt.encode(payload=payload,key=secret,algorithm=algorithm)
+        access_token = jwt.encode(payload=payload,key=secret,algorithm=algorithm)
+        self.access_token = access_token
+        return access_token
     
     @staticmethod
     def verify_jwt_token(db:Session,token:str,secret:str,algorithm) -> Tuple[str,str,str] | None:
