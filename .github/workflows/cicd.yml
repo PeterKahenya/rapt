@@ -29,6 +29,9 @@ env:
     JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
     JWT_ALGORITHM: ${{ secrets.JWT_ALGORITHM }}
     ACCESS_TOKEN_EXPIRY_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRY_MINUTES }}
+    SMSLEOPARD_BASE_URL: ${{ secrets.SMSLEOPARD_BASE_URL }}
+    SMSLEOPARD_API_KEY: ${{ secrets.SMSLEOPARD_API_KEY }}
+    SMSLEOPARD_API_SECRET: ${{ secrets.SMSLEOPARD_API_SECRET }}
 
 jobs:
     test:
@@ -149,9 +152,11 @@ jobs:
                   JWT_SECRET_KEY="${{ env.JWT_SECRET_KEY }}"
                   JWT_ALGORITHM=${{ env.JWT_ALGORITHM }}
                   ACCESS_TOKEN_EXPIRY_MINUTES=${{ env.ACCESS_TOKEN_EXPIRY_MINUTES }}
-
+                  SMSLEOPARD_BASE_URL=${{ env.SMSLEOPARD_BASE_URL }}
+                  SMSLEOPARD_API_KEY=${{ env.SMSLEOPARD_API_KEY }}
+                  SMSLEOPARD_API_SECRET=${{ env.SMSLEOPARD_API_SECRET }}
                   EOF
-        
+
                   kubectl delete secrets rapt-prod-env-secrets || true
                   kubectl create secret generic rapt-prod-env-secrets --from-env-file ./.env.prod
             

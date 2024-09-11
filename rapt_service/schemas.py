@@ -1,39 +1,50 @@
 from pydantic import BaseModel,UUID4
-from typing import List,Optional
+from typing import Any, List,Optional
 from datetime import datetime
 
+# common schemas
+class ListResponse(BaseModel):
+    total: int
+    page: int
+    size: int
+    data: List[Any]
 
+# base schemas
 class ModelBase(BaseModel):
     id: UUID4
-
     model_config = {
         "from_attributes": True
     }
-
+    
 class ModelInDBBase(ModelBase):
     created_at: datetime
     updated_at: datetime | None
-
-
 
 # content type schema
 class ContentTypeCreate(BaseModel):
     content: str
 
-class ContentTypeInDBBase(ModelInDBBase):
+class ContentTypeUpdate(BaseModel):
     content: str
 
+class ContentTypeInDBBase(ModelInDBBase):
+    content: str
+    
 # permission schema
 class PermissionCreate(BaseModel):
     name: str
     codename: str
     content_type_id: UUID4
 
+class PermissionUpdate(BaseModel):
+    name: Optional[str] = None
+    codename: Optional[str] = None
+    content_type_id: Optional[UUID4] = None
+
 class PermissionInDBBase(ModelInDBBase):
     name: str
     codename: str
     content_type: ContentTypeInDBBase
-
 
 # role schema
 class RoleCreate(BaseModel):
@@ -43,12 +54,12 @@ class RoleCreate(BaseModel):
 class RoleUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    permissions: List[ModelBase] | None
+    permissions: List[ModelBase] | None = []
 
 class RoleInDBBase(ModelInDBBase):
     name: str
     description: str
-    permissions: List[PermissionInDBBase] | None
+    permissions: List[PermissionInDBBase] | None = []
 
 # user schema
 class UserCreate(BaseModel):
@@ -87,10 +98,16 @@ class UserInDBBase(ModelInDBBase):
     roles: List[RoleInDBBase] = []
     client_apps: List[ModelBase] = []
 
-# user verify
 class UserVerify(BaseModel):
     phone: str
     phone_verification_code: str
+    
+class AccessToken(BaseModel):
+    access_token: str
+    token_type: str = "Bearer"
+    
+class RefreshToken(BaseModel):
+    access_token: str
 
 # client app schema
 class ClientAppCreate(BaseModel):
@@ -109,4 +126,80 @@ class ClientAppInDBBase(ModelInDBBase):
     client_id: str
     client_secret: str
     user: ModelInDBBase
+
+# chatroom schema
+class ChatRoomCreate(BaseModel):
+    fcm_room_id: str
+    socket_room_id: str
+    members: Optional[List[ModelBase]] = []
+
+class ChatRoomUpdate(BaseModel):
+    fcm_room_id: Optional[str] = None
+    socket_room_id: Optional[str] = None
+    members: List[ModelBase] | None = []
     
+class ChatRoomInDBBase(ModelInDBBase):
+    fcm_room_id: str
+    socket_room_id: str
+    members: List[UserInDBBase] | None
+    room_chats: List["ChatInDBBase"] | None
+    
+# group schema
+class GroupCreate(BaseModel):
+    name: str
+    description: str
+    chatroom_id: UUID4
+
+class GroupUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    chatroom_id: Optional[UUID4] = None
+
+class GroupInDBBase(ModelInDBBase):
+    name: str
+    description: str
+    chatroom: ChatRoomInDBBase
+
+class MediaObject(BaseModel):
+    link: str
+    file_type: str
+
+# chat schema
+class ChatCreate(BaseModel):
+    message: str
+    sender_id: UUID4
+    room_id: UUID4
+    media: Optional[List[MediaObject]] = None
+
+class ChatUpdate(BaseModel):
+    message: Optional[str] = None
+    media: Optional[List[ModelBase]] | None = None
+    is_read: Optional[bool] = False
+
+class ChatInDBBase(ModelInDBBase):
+    message: str
+    is_read: bool
+    sender: UserInDBBase
+    room: ModelBase
+    media: List["MediaInDBBase"] | None
+
+# media schema
+class MediaCreate(BaseModel):
+    link: str
+    file_type: str
+    chat_id: UUID4
+
+class MediaUpdate(BaseModel):
+    link: Optional[str] = None
+    file_type: Optional[str] = None
+    chat_id: Optional[UUID4] = None
+
+class MediaInDBBase(ModelInDBBase):
+    link: str
+    file_type: str
+    chat_id: UUID4
+    # WARNING: chat object would lead to recursive error
+
+
+
+

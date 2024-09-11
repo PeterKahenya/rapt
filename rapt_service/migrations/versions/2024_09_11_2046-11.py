@@ -1,8 +1,8 @@
-"""create users, clientapps, chats, groups and media tables
+"""create db
 
-Revision ID: b4c692aea9a6
+Revision ID: 49b5232b08f6
 Revises: 
-Create Date: 2024-09-01 11:07:21.464364
+Create Date: 2024-09-11 20:46:11.745204
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b4c692aea9a6'
+revision: str = '49b5232b08f6'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -58,6 +58,7 @@ def upgrade() -> None:
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_superuser', sa.Boolean(), nullable=False),
     sa.Column('is_verified', sa.Boolean(), nullable=False),
+    sa.Column('access_token', sa.String(length=500), nullable=True),
     sa.Column('last_seen', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
@@ -68,8 +69,8 @@ def upgrade() -> None:
     op.create_table('chatroom_members',
     sa.Column('user_id', sa.Uuid(), nullable=False),
     sa.Column('chatroom_id', sa.Uuid(), nullable=False),
-    sa.ForeignKeyConstraint(['chatroom_id'], ['chatrooms.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['chatroom_id'], ['chatrooms.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('user_id', 'chatroom_id')
     )
     op.create_table('chats',
@@ -81,7 +82,7 @@ def upgrade() -> None:
     sa.Column('sender_id', sa.Uuid(), nullable=False),
     sa.Column('room_id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['room_id'], ['chatrooms.id'], ),
-    sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
     )
@@ -94,17 +95,16 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('user_id', sa.Uuid(), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('client_id'),
-    sa.UniqueConstraint('client_secret'),
     sa.UniqueConstraint('id')
     )
     op.create_table('contacts',
     sa.Column('user_id', sa.Uuid(), nullable=False),
     sa.Column('contact_id', sa.Uuid(), nullable=False),
-    sa.ForeignKeyConstraint(['contact_id'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['contact_id'], ['users.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('user_id', 'contact_id')
     )
     op.create_table('groups',
@@ -134,8 +134,8 @@ def upgrade() -> None:
     op.create_table('user_roles',
     sa.Column('user_id', sa.Uuid(), nullable=False),
     sa.Column('role_id', sa.Uuid(), nullable=False),
-    sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('user_id', 'role_id')
     )
     op.create_table('media',
@@ -145,7 +145,7 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('chat_id', sa.Uuid(), nullable=False),
-    sa.ForeignKeyConstraint(['chat_id'], ['chats.id'], ),
+    sa.ForeignKeyConstraint(['chat_id'], ['chats.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
     )
