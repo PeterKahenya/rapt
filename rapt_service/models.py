@@ -210,7 +210,7 @@ class ClientApp(Model):
     client_secret: Mapped[str] = mapped_column(String(100),default=utils.generate_client_secret)
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id",ondelete="CASCADE"))
     user: Mapped[User] = relationship("User",back_populates="client_apps")
 
     #set the client id and secret at creation
