@@ -56,11 +56,12 @@ async def filter_objects(db: Session, model: models.Model, params: dict = {}, so
             'gt': lambda col, val: col > val,
             'gte': lambda col, val: col >= val,
             'like': lambda col, val: col.like(val),
-            'ilike': lambda col, val: col.ilike(val),
+            'ilike': lambda col, val: col.ilike("%"+val+"%"),
             'contains': lambda col, val: col.contains(val),
             'in': lambda col, val: col.in_(val),
         }
         query = select(model)
+        print(f"All Results: {[u.to_dict() for u in db.scalars(query).all()]}")
         for key, value in params.items():
             if '__' in key:
                 column_name, condition = key.split('__', 1)
@@ -118,19 +119,17 @@ async def update_permission(db: Session, permission_id: UUID4, permission_update
 # update role
 async def update_role(db: Session, role_id: UUID4, role_update_data: schemas.RoleUpdate) -> models.Role:
     logger.info(f"Updating  with id: {role_id}")
-    role = await get_obj_or_404(db=db, model=models.Role,  id=role_id)
+    role: models.Role = await get_obj_or_404(db=db, model=models.Role,  id=role_id)
     role.name = role_update_data.name if role_update_data.name else role.name
     role.description = role_update_data.description if role_update_data.description else role.description
     if role_update_data.permissions:
-        if len(role_update_data.permissions) == 0:
-            role.permissions.clear()
-            db.commit()
-        else:
-            for perm in role_update_data.permissions:
-                perm_obj = await get_obj_or_404(db=db, model=models.Permission,  id=perm.id)
-                if perm_obj not in role.permissions:
-                    role.permissions.append(perm_obj)
-            db.commit()
+        role.permissions.clear()
+        db.commit()
+        for perm in role_update_data.permissions:
+            perm_obj = await get_obj_or_404(db=db, model=models.Permission,  id=perm.id)
+            if perm_obj not in role.permissions:
+                role.permissions.append(perm_obj)
+        db.commit()
     db.commit()
     db.refresh(role)
     return role
@@ -141,6 +140,7 @@ async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.Use
     user = await get_obj_or_404(db=db, model=models.User,  id=user_id)
     user.name = user_update_data.name if user_update_data.name else user.name
     user.phone = user_update_data.phone if user_update_data.phone else user.phone
+    # TODO: Phone number should not be updatable
     user.is_superuser = user_update_data.is_superuser if user_update_data.is_superuser else user.is_superuser
     user.is_active = user_update_data.is_active if user_update_data.is_active else user.is_active
     user.is_verified = user_update_data.is_verified if user_update_data.is_verified else user.is_verified
@@ -159,6 +159,7 @@ async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.Use
             db.commit()
     logger.info(f"Updating user contacts with data: {user_update_data}")
     if user_update_data.contacts:
+        # TODO: contacts should be updated in their own endpoint and function
         if len(user_update_data.contacts) == 0:
             user.contacts.clear()
             db.commit()
@@ -172,12 +173,14 @@ async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.Use
             db.commit()
     db.commit()
     db.refresh(user)
+    print(user)
     return user
 
 # update client app
 async def update_clientapp(db: Session, client_app_id: UUID4, client_app_update_data: schemas.ClientAppUpdate) -> models.ClientApp:
     logger.info(f"Updating client app with id: {client_app_id}")
     client_app = await get_obj_or_404(db=db, model=models.ClientApp,  id=client_app_id)
+    _ = await get_obj_or_404(db=db, model=models.User,  id=client_app_update_data.user_id)
     client_app.name = client_app_update_data.name if client_app_update_data.name else client_app.name
     client_app.description = client_app_update_data.description if client_app_update_data.description else client_app.description
     client_app.user_id = client_app_update_data.user_id if client_app_update_data.user_id else client_app.user_id
@@ -293,14 +296,15 @@ async def paginate(
                     model: models.Model,
                     schema: BaseModel,
                     q: Optional[str] = None,
-                    params: Optional[Dict] = None,
                     page: int = Query(1, ge=1),
                     size: int = Query(10, ge=1, le=100),
-                    sort_by: str = "created_at,asc"
+                    sort_by: str = "created_at,asc",
+                    **params
                 ) -> schemas.ListResponse:
     if q:
         data = await search_objects(db=db, model=model,q=q)
     elif params and len(params) > 0:
+        print(f"Params: {params}")
         data = await filter_objects(db=db, model=model,params=params,sort_by=sort_by)
     else:
         data = await filter_objects(db=db, model=model, params={},sort_by=sort_by)
