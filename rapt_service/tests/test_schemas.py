@@ -70,13 +70,15 @@ def test_role_schema(db):
 def test_user_schema(db):
     user_create = schemas.UserCreate(**{
         "phone": "1234567890",
-        "name": "Test User"
+        "name": "Test User",
+        "device_fcm_token": "test_fcm_token"
     })
     assert user_create.phone == "1234567890" and user_create.name == "Test User"
     roles = db.execute(select(models.Role)).scalars().all()
     contacts = db.execute(select(models.User)).scalars().all()    
     user_update = schemas.UserUpdate(**{
         "phone": "1234567891",
+        "device_fcm_token": "test_fcm_token1",
         "name": "Test User 1",
         "is_superuser": True,
         "roles": [schemas.ModelBase.model_validate(role).model_dump() for role in roles],       
@@ -137,31 +139,22 @@ def test_chatroom_schema(db):
     #test create chatroom object
     user1 = db.execute(select(models.User)).scalars().all()
     chatroom_create = schemas.ChatRoomCreate(**{
-        "fcm_room_id": "test_fcm_room_id",
         "socket_room_id": "test_socket_room_id",
         "members": [schemas.ModelBase.model_validate(user).model_dump() for user in user1]})
-    assert chatroom_create.fcm_room_id == "test_fcm_room_id"
     assert chatroom_create.socket_room_id == "test_socket_room_id"
     assert chatroom_create.members[0].id == user1[0].id
     chatroom_update = schemas.ChatRoomUpdate(**{
-        "fcm_room_id": "test_fcm_room_id1",
         "socket_room_id": "test_socket_room_id1"
     })
-    assert chatroom_update.fcm_room_id == "test_fcm_room_id1"
     assert chatroom_update.socket_room_id == "test_socket_room_id1"
     chatroom_db = db.execute(select(models.ChatRoom)).scalars().first()
     chatroom_schema = schemas.ChatRoomInDBBase.model_validate(chatroom_db)
-    assert chatroom_schema.fcm_room_id == chatroom_db.fcm_room_id
     assert chatroom_schema.socket_room_id == chatroom_db.socket_room_id
     assert chatroom_schema.members[0].id == chatroom_db.members[0].id
     assert len(chatroom_schema.members) == len(chatroom_db.members)
     assert len(chatroom_schema.room_chats) == len(chatroom_db.room_chats)
     with pytest.raises(ValidationError):
-        schemas.ChatRoomCreate(**{
-            "fcm_room_id": None,
-            "socket_room_id": "test_socket_room_id",
-            "members": [schemas.ModelBase.model_validate(user).model_dump() for user in user1]
-        })
+        schemas.ChatRoomCreate(**{})
 
 # test group schemas
 def test_group_schema(db):

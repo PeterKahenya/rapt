@@ -66,6 +66,7 @@ class UserCreate(BaseModel):
     phone: str
     name: str
     is_superuser: Optional[bool] = False
+    device_fcm_token: Optional[str] = None
     
 class Contact(ModelBase):
     phone: str
@@ -75,6 +76,7 @@ class Contact(ModelBase):
 class UserUpdate(BaseModel):
     phone: Optional[str] = None
     name: Optional[str] = None
+    device_fcm_token: Optional[str] = None
     is_superuser: Optional[bool] = False
     is_active: Optional[bool] = False
     is_verified: Optional[bool] = False
@@ -129,17 +131,14 @@ class ClientAppInDBBase(ModelInDBBase):
 
 # chatroom schema
 class ChatRoomCreate(BaseModel):
-    fcm_room_id: str
-    socket_room_id: str
-    members: Optional[List[ModelBase]] = []
+    socket_room_id: Optional[str] = None
+    members: List[ModelBase]
 
 class ChatRoomUpdate(BaseModel):
-    fcm_room_id: Optional[str] = None
     socket_room_id: Optional[str] = None
     members: List[ModelBase] | None = []
     
 class ChatRoomInDBBase(ModelInDBBase):
-    fcm_room_id: str
     socket_room_id: str
     members: List[UserInDBBase] | None
     room_chats: List["ChatInDBBase"] | None
