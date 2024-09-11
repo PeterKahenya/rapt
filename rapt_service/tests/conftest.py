@@ -4,7 +4,8 @@ from sqlalchemy.orm import sessionmaker
 import models
 from pydantic_settings import BaseSettings
 from faker import Faker
-from api import app,get_db
+from api import app
+from depends import get_db
 from fastapi.testclient import TestClient
 from init import initialize_db
 
@@ -70,7 +71,6 @@ def seed_db(db):
     db.commit()
     # faker add chatrooms
     members = db.execute(select(models.User)).scalars().all()[0:15]
-    print(len(members))
     for i in range(11):
         chatroom = models.ChatRoom(fcm_room_id=faker.uuid4(),socket_room_id=faker.uuid4(),members=[members[0],members[i+1]])
         db.add(chatroom)
@@ -116,9 +116,9 @@ def db():
 def client(db):
     def get_test_db():
         try:
-            initialize_db(db)
             yield db
         finally:
             pass
     app.dependency_overrides[get_db] = get_test_db
+    initialize_db(db)
     yield TestClient(app)
