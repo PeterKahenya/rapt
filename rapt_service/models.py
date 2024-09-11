@@ -95,6 +95,7 @@ class User(Model):
     phone: Mapped[str] = mapped_column(String(12),unique=True)
     phone_verification_code: Mapped[Optional[str]] = mapped_column(String(6))
     phone_verification_code_expiry_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime())
+    device_fcm_token: Mapped[Optional[str]] = mapped_column(String(500))
     is_active: Mapped[bool] = mapped_column(default=False)
     is_superuser: Mapped[bool] = mapped_column(default=False)
     is_verified: Mapped[bool] = mapped_column(default=False)
@@ -231,7 +232,6 @@ class ClientApp(Model):
 class ChatRoom(Model):
     __tablename__ = "chatrooms"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True,unique=True,default=uuid.uuid4)
-    fcm_room_id: Mapped[str] = mapped_column(String(500),unique=True)
     socket_room_id: Mapped[str] = mapped_column(String(500),unique=True)
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
@@ -244,9 +244,7 @@ class ChatRoom(Model):
     room_chats: Mapped[List["Chat"]] = relationship('Chat',back_populates='room')
 
     #ensure that the chatroom has at least two members and members must be unique
-    def __init__(self,fcm_room_id:str,socket_room_id:str,members:List[User]):
-        if not fcm_room_id:
-            raise ValueError("FCM Room ID cannot be empty")
+    def __init__(self,socket_room_id:str,members:List[User]):
         if not socket_room_id:
             raise ValueError("Socket Room ID cannot be empty")
         # chatroom has at least two members
@@ -255,7 +253,6 @@ class ChatRoom(Model):
         # members must be unique
         if len(members) != len(set(members)):
             raise ValueError("Members must be unique")
-        self.fcm_room_id = fcm_room_id
         self.socket_room_id = socket_room_id
         self.members = members
 

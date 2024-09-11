@@ -72,7 +72,7 @@ def seed_db(db):
     # faker add chatrooms
     members = db.execute(select(models.User)).scalars().all()[0:15]
     for i in range(11):
-        chatroom = models.ChatRoom(fcm_room_id=faker.uuid4(),socket_room_id=faker.uuid4(),members=[members[0],members[i+1]])
+        chatroom = models.ChatRoom(socket_room_id=faker.uuid4(),members=[members[0],members[i+1]])
         db.add(chatroom)
     db.commit()
     # faker add chat groups

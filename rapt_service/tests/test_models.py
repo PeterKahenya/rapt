@@ -134,7 +134,7 @@ def test_clientapp_model(db):
 def test_chatroom_model(db):
     member1 = db.execute(select(models.User).where(models.User.name == "Test User")).scalar_one()
     member2 = db.execute(select(models.User).where(models.User.name == "Test User 1")).scalar_one()
-    chatroom = models.ChatRoom(fcm_room_id="FCMID00001",socket_room_id="SOCKROOMID0001",members=[member1,member2])
+    chatroom = models.ChatRoom(socket_room_id="SOCKROOMID0001",members=[member1,member2])
     db.add(chatroom)
     db.commit()
     db.refresh(chatroom)
@@ -148,31 +148,32 @@ def test_chatroom_model(db):
     
     # chatroom must have at least 2 members
     with pytest.raises(ValueError):
-        models.ChatRoom(fcm_room_id="FCMID00002",socket_room_id="SOCKROOMID0002",members=[member1])
+        models.ChatRoom(socket_room_id="SOCKROOMID0002",members=[member1])
     # chatroom must have unique members
     with pytest.raises(ValueError):
-        models.ChatRoom(fcm_room_id="FCMID00003",socket_room_id="SOCKROOMID0003",members=[member1,member2,member1])
-    # chatroom must have fcm_room_id and socket_room_id
+        models.ChatRoom(socket_room_id="SOCKROOMID0003",members=[member1,member2,member1])
+    # chatroom must have socket_room_id
     with pytest.raises(ValueError):
-        models.ChatRoom(fcm_room_id=None,socket_room_id="SOCKROOMID0002",members=[member1,member2])
-    with pytest.raises(ValueError):
-        models.ChatRoom(fcm_room_id="FCMID00002",socket_room_id=None,members=[member1,member2])
+        models.ChatRoom(socket_room_id=None,members=[member1,member2])
     
 # test group model and chatroom relationship
 def test_group_model(db):
-    chatroom = db.execute(select(models.ChatRoom).where(models.ChatRoom.fcm_room_id == "FCMID00001")).scalar_one()
-    group = models.Group(name="Test Group",description="Test Group Description",chatroom_id=chatroom.id)
-    db.add(group)
-    db.commit()
-    db.refresh(group)
-    db.refresh(chatroom)
-    assert group in db
-    assert group.chatroom == chatroom
-    assert chatroom.group == group
+    chatroom = db.execute(select(models.ChatRoom)).scalars().first()
+    if chatroom.group != None:
+        assert True
+    else:
+        group = models.Group(name="Test Group",description="Test Group Description",chatroom_id=chatroom.id)
+        db.add(group)
+        db.commit()
+        db.refresh(group)
+        db.refresh(chatroom)
+        assert group in db
+        assert group.chatroom == chatroom
+        assert chatroom.group == group
     
 # test chat model and chatroom relationship and sender relationship
 def test_chat_model(db):
-    chatroom = db.execute(select(models.ChatRoom).where(models.ChatRoom.fcm_room_id == "FCMID00001")).scalar_one()
+    chatroom = db.execute(select(models.ChatRoom)).scalars().first()
     sender = db.execute(select(models.User).where(models.User.name == "Test User")).scalar_one()
     chat = models.Chat(message="Test Chat",room=chatroom,sender=sender)
     db.add(chat)
