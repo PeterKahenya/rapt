@@ -128,7 +128,6 @@ async def test_users_api(mock_send_sms,client,db):
         "roles": [r.to_dict() for r in roles]
     }
     response = client.put(f"/auth/users/{user_id}",json=update_data,headers={"Authorization": f"Bearer {access_token}"})
-    print(f"User update response: {response.json()}")
     assert response.status_code == 200
     assert response.json()["name"] == update_data["name"]
     assert response.json()["phone"] == update_data["phone"]
@@ -153,7 +152,6 @@ async def test_clientapps_api(mock_send_sms,client,db):
         "user_id": str(user_db.id)
     }
     response = client.post("/auth/apps/",json=clientapp_data,headers={"Authorization": f"Bearer {access_token}"})
-    print(f"Clientapp create response: {response.json()}")
     assert response.status_code == 201
     assert response.json()["name"] == "Test App"
     # get clientapps

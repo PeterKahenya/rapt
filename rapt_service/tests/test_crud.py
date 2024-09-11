@@ -306,7 +306,6 @@ async def test_chatgroup_crud(db):
 async def test_chatmessage_crud(db):
     # create chatmessage
     chatroom = db.execute(select(models.ChatRoom)).scalars().first()
-    print(chatroom.members)
     sender = db.execute(select(models.User).where(models.User.id == chatroom.members[0].id)).scalars().first()
     chatmessage_create = schemas.ChatCreate(**{
         "message": "Hello World",
