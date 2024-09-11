@@ -174,7 +174,7 @@ def test_group_model(db):
 # test chat model and chatroom relationship and sender relationship
 def test_chat_model(db):
     chatroom = db.execute(select(models.ChatRoom)).scalars().first()
-    sender = db.execute(select(models.User).where(models.User.name == "Test User")).scalar_one()
+    sender = chatroom.members[0]
     chat = models.Chat(message="Test Chat",room=chatroom,sender=sender)
     db.add(chat)
     db.commit()
