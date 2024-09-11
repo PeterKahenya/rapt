@@ -76,7 +76,7 @@ contacts_association = Table(
     'contacts',
     Model.metadata,
     Column('user_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True),
-    Column('contact_id', Uuid, ForeignKey('users.id'), primary_key=True)
+    Column('contact_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True)
 )
 
 
