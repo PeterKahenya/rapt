@@ -83,7 +83,7 @@ contacts_association = Table(
 chatroom_members_association = Table(
     'chatroom_members',
     Model.metadata,
-    Column('user_id', Uuid, ForeignKey('users.id'), primary_key=True),
+    Column('user_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True),
     Column('chatroom_id', Uuid, ForeignKey('chatrooms.id',ondelete="CASCADE"),primary_key=True)
 )
 
