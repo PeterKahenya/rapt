@@ -154,6 +154,7 @@ async def test_user_crud(db):
     user_create = schemas.UserCreate(**{
         "phone": "9994567899",
         "name": "Test User1",
+        "device_fcm_token": "Test FCM Token",
         "is_superuser": False
     })
     user_db = await crud.create_obj(db, models.User, user_create)
@@ -179,6 +180,7 @@ async def test_user_crud(db):
         "is_verified": False,
         "phone_verification_code": "1234",
         "phone_verification_code_expiry_at": "2021-01-01",
+        "device_fcm_token": "Test FCM Token1",
         "last_seen": "2021-01-01",
         "contacts": [{"phone":"0790003390","name":"Test Contact"},{"phone":"0790003391","name":"Test Contact1"}],
         "roles": [r.to_dict() for r in roles]
@@ -231,7 +233,6 @@ async def test_chatroom_crud(db):
     # create chatroom
     members = db.execute(select(models.User)).scalars().all()[0:2]
     chatroom_create = schemas.ChatRoomCreate(**{
-        "fcm_room_id": "fcm_room_id",
         "socket_room_id": "socket_room_id",
         "members": [m.to_dict() for m in members]
     })
@@ -246,16 +247,15 @@ async def test_chatroom_crud(db):
     chatrooms = await crud.filter_objects(db, models.ChatRoom, {})
     assert len(chatrooms) > 0
     # filter chatrooms
-    chatrooms = await crud.filter_objects(db, models.ChatRoom, {"fcm_room_id__contains":"fcm"})
+    chatrooms = await crud.filter_objects(db, models.ChatRoom, {"socket_room_id__contains":"et"})
     assert len(chatrooms) > 0
     # update chatroom
     chatroom_update = schemas.ChatRoomUpdate(**{
-        "fcm_room_id": "fcm_room_id1",
         "socket_room_id": "socket_room_id1",
         "members": [m.to_dict() for m in members]
     })
     chatroom_db = await crud.update_chatroom(db, chatroom_db.id, chatroom_update)
-    assert chatroom_db.fcm_room_id == "fcm_room_id1"
+    assert chatroom_db.socket_room_id == "socket_room_id1"
     # delete chatroom
     is_deleted = await crud.delete_obj(db, models.ChatRoom, chatroom_db.id)
     assert is_deleted
@@ -266,7 +266,7 @@ async def test_chatroom_crud(db):
 async def test_chatgroup_crud(db):
     # create chatgroup
     members = db.execute(select(models.User)).scalars().all()[0:2]
-    chatroom = models.ChatRoom(fcm_room_id="FCMID000099",socket_room_id="SOCKROOMID00099",members=members)
+    chatroom = models.ChatRoom(socket_room_id="SOCKROOMID00099",members=members)
     db.add(chatroom)
     db.commit()
     db.refresh(chatroom)

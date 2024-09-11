@@ -137,11 +137,12 @@ async def update_role(db: Session, role_id: UUID4, role_update_data: schemas.Rol
 #update user
 async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.UserUpdate) -> models.User:
     logger.info(f"Updating user with id: {user_id}")
-    user = await get_obj_or_404(db=db, model=models.User,  id=user_id)
+    user: models.User = await get_obj_or_404(db=db, model=models.User,  id=user_id)
     user.name = user_update_data.name if user_update_data.name else user.name
     user.phone = user_update_data.phone if user_update_data.phone else user.phone
     # TODO: Phone number should not be updatable
     user.is_superuser = user_update_data.is_superuser if user_update_data.is_superuser else user.is_superuser
+    user.device_fcm_token = user_update_data.device_fcm_token if user_update_data.device_fcm_token else user.device_fcm_token
     user.is_active = user_update_data.is_active if user_update_data.is_active else user.is_active
     user.is_verified = user_update_data.is_verified if user_update_data.is_verified else user.is_verified
     user.phone_verification_code = user_update_data.phone_verification_code if user_update_data.phone_verification_code else user.phone_verification_code
@@ -195,7 +196,7 @@ async def create_chatroom(db: Session, chatroom_create_data: schemas.ChatRoomCre
     for user in chatroom_create_data.members:
         user_obj = await get_obj_or_404(db=db, model=models.User, id=user.id)
         members.append(user_obj)
-    chatroom = models.ChatRoom(chatroom_create_data.fcm_room_id, chatroom_create_data.socket_room_id, members)
+    chatroom = models.ChatRoom(chatroom_create_data.socket_room_id, members)
     db.add(chatroom)
     db.commit()
     db.refresh(chatroom)
@@ -205,7 +206,6 @@ async def create_chatroom(db: Session, chatroom_create_data: schemas.ChatRoomCre
 async def update_chatroom(db: Session, chatroom_id: UUID4, chatroom_update_data: schemas.ChatRoomUpdate) -> models.ChatRoom:
     logger.info(f"Updating chatroom with id: {chatroom_id}")
     chatroom = await get_obj_or_404(db=db, model=models.ChatRoom,  id=chatroom_id)
-    chatroom.fcm_room_id = chatroom_update_data.fcm_room_id if chatroom_update_data.fcm_room_id else chatroom.fcm_room_id
     chatroom.socket_room_id = chatroom_update_data.socket_room_id if chatroom_update_data.socket_room_id else chatroom.socket_room_id
     if chatroom_update_data.members:
         if len(chatroom_update_data.members) < 2:
