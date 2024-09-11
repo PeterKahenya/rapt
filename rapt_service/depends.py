@@ -1,8 +1,8 @@
-from typing import Annotated
+from typing import Annotated, Any, Dict, Optional
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
 from config import DATABASE_URL,logger
-from fastapi import Depends, Form, HTTPException
+from fastapi import Depends, Form, HTTPException, Query, Request
 from fastapi.security import OAuth2PasswordBearer
 from config import settings
 import crud
@@ -91,3 +91,21 @@ def authorize(perm: str):
     async def _authorize(user: models.User = Depends(authenticate), db: Session = Depends(get_db)) -> models.User:
         return await check_permission(perm, user)
     return _authorize
+
+async def get_query_params(
+    request: Request,
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
+    q: Optional[str] = None,
+) -> Dict[str, Any]:
+    query_params = dict(request.query_params)
+    query_params.pop('page', None)
+    query_params.pop('size', None)
+    query_params.pop('q', None)
+    params = {
+        "page": page,
+        "size": size,
+        "q": q,
+        **query_params
+    }
+    return params
