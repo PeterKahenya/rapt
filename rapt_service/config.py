@@ -21,7 +21,6 @@ class AppSettings(BaseSettings):
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     access_token_expiry_minutes: int = 60
-    rabbitmq_url: str
     smsleopard_base_url: str
     smsleopard_api_key: str
     smsleopard_api_secret: str
