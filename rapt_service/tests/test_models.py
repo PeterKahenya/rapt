@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 import jwt
 from .conftest import settings
 import models
@@ -20,15 +21,15 @@ def test_to_dict_method(db):
 
 # test content_type model
 def test_content_type_model(db):
-    content_type = models.ContentType(content = "users")
+    content_type = models.ContentType(content = "users1")
     db.add(content_type)
     db.commit()
     assert content_type in db
 
 # test permission model
 def test_permission_model(db):
-    user_content_type = db.execute(select(models.ContentType).where(models.ContentType.content == "users")).scalars().first()
-    permission = models.Permission(name="Can View Users",codename="view_users",content_type=user_content_type)
+    user_content_type = db.execute(select(models.ContentType).where(models.ContentType.content == "users1")).scalars().first()
+    permission = models.Permission(name="Can View Users1",codename="view_users1",content_type=user_content_type)
     db.add(permission)
     db.commit()
     assert permission in db
@@ -36,8 +37,8 @@ def test_permission_model(db):
 # test role model
 def test_role_model(db):
     user_content_type = db.execute(select(models.ContentType).where(models.ContentType.content == "users")).scalars().first()
-    permission1 = models.Permission(name="Can Edit Users",codename="edit_users",content_type=user_content_type)
-    permission2 = models.Permission(name="Can Delete Users",codename="delete_users",content_type=user_content_type)
+    permission1 = models.Permission(name="Can Edit Users",codename="edit_users1",content_type=user_content_type)
+    permission2 = models.Permission(name="Can Delete Users",codename="delete_users1",content_type=user_content_type)
     role = models.Role(name="Admin",description="Admin Role")
     role.permissions.append(permission1)
     role.permissions.append(permission2)
@@ -62,7 +63,7 @@ async def test_user_model(db):
     assert contact1 in user.contacts
     assert contact2 in user.contacts
     
-    role = db.execute(select(models.Role).where(models.Role.name == "Admin")).scalar_one()
+    role = db.execute(select(models.Role)).scalars().first()
     role2 = models.Role(name="User",description="User Role")
     db.add(role2)
     db.commit()
@@ -84,14 +85,16 @@ async def test_user_model(db):
     assert validation_status == False
     
     # test jwt token generation and validation
-    token = user.create_jwt_token(secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm,expiry_minutes=settings.access_token_expiry_minutes)
-    assert user.phone == models.User.verify_jwt_token(db,token,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm)
-    with pytest.raises(jwt.InvalidAlgorithmError):
+    clientapp = db.execute(select(models.ClientApp)).scalars().first()
+    token = user.create_jwt_token(clientapp=clientapp,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm,expiry_minutes=settings.access_token_expiry_minutes)
+    phone,_,_ = models.User.verify_jwt_token(db,token,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm)
+    assert user.phone == phone
+    with pytest.raises(HTTPException):
         models.User.verify_jwt_token(db,token,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm+"1")
-    with pytest.raises(jwt.ExpiredSignatureError):
-        expired_token = user.create_jwt_token(secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm,expiry_minutes=-10)
+    with pytest.raises(HTTPException):
+        expired_token = user.create_jwt_token(clientapp=clientapp,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm,expiry_minutes=-10)
         models.User.verify_jwt_token(db,expired_token,secret=settings.jwt_secret_key,algorithm=settings.jwt_algorithm)
-    with pytest.raises(jwt.InvalidTokenError):
+    with pytest.raises(HTTPException):
         models.User.verify_jwt_token(db,token,secret="lsdslkdsldk",algorithm=settings.jwt_algorithm)
     
 
