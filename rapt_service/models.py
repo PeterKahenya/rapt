@@ -278,7 +278,7 @@ class Chat(Model):
     is_read: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
-    sender_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"),nullable=False)
+    sender_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id",ondelete="CASCADE"),nullable=False)
     sender: Mapped[User] = relationship('User',back_populates='chats')
     room_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chatrooms.id"),nullable=False)
     room: Mapped[ChatRoom] = relationship('ChatRoom',back_populates='room_chats')
