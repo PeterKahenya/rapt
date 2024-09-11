@@ -13,3 +13,4 @@ honeybadger
 coverage
 flower
 faker
+nanoid
