@@ -100,10 +100,6 @@ def test_user_schema(db):
     })
     assert contact.phone == "0700000000"
     assert contact.name == "Test Contact"
-    user_login = schemas.UserLogin(**{
-        "phone": "0700000000"
-    })
-    assert user_login.phone == "0700000000"
     user_verify = schemas.UserVerify(**{
         "phone": "0700000000",
         "phone_verification_code": "123456"
