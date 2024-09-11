@@ -53,7 +53,7 @@ user_roles_association = Table(
     'user_roles',
     Model.metadata,
     Column('user_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True),
-    Column('role_id', Uuid, ForeignKey('roles.id'), primary_key=True)
+    Column('role_id', Uuid, ForeignKey('roles.id',ondelete="CASCADE"), primary_key=True)
 )
 
 
@@ -161,6 +161,9 @@ class User(Model):
                 if perm.codename == permission:
                     return True
         return False
+    
+    def __str__(self):
+        return f"{self.name} - {self.phone}"
 
     def create_jwt_token(self,clientapp: "ClientApp", secret:str,algorithm:str,expiry_minutes:int) -> str:
         """
