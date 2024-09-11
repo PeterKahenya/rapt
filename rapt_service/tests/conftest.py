@@ -106,6 +106,7 @@ def db():
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = SessionLocal(bind=engine)
     seed_db(session)
+    initialize_db(session)
     yield session
     session.rollback()
     session.close()
@@ -120,5 +121,4 @@ def client(db):
         finally:
             pass
     app.dependency_overrides[get_db] = get_test_db
-    initialize_db(db)
     yield TestClient(app)
