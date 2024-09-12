@@ -18,13 +18,13 @@ async def create_room(
                         db: models.Session = Depends(get_db)
                     ) -> schemas.ChatRoomInDBBase:
     # check if the room already exists with the same members
+    if user.id not in [u.id for u in room_create.members]:
+        print("User not in members, adding user to members")
+        room_create.members.append(schemas.ModelBase(id=user.id))
     members = [await crud.get_obj_or_404(db,models.User,u.id) for u in room_create.members]
-    if user not in members:
-        members.append(user)
     chatrooms = db.execute(select(models.ChatRoom)).scalars().all()
     chatroom = next((room for room in chatrooms if set(room.members) == set(members)), None)
     if not chatroom:
-        room_create.members.append(schemas.ModelBase(id=user.id))
         room_create.socket_room_id = utils.generate_unique_socket_room_id()
         chatroom = await crud.create_chatroom(db,room_create)
     return chatroom
@@ -38,6 +38,7 @@ async def get_rooms(
                         user: models.User = Depends(authorize(perm="view_chatrooms")),
                         db: models.Session = Depends(get_db)
                     ) -> List[schemas.ChatRoomInDBBase]:
+    print(user.chatrooms)
     return user.chatrooms
 
 # get single chatroom
@@ -79,3 +80,65 @@ async def delete_room(
     if not is_deleted:
         raise HTTPException(status_code=500,detail={"message":"Something happened while trying to delete the resource"})
     return None
+
+# create group
+@router.post("/groups",status_code=201,tags=["Chat"])
+async def create_group(
+                        group_create: schemas.GroupCreate,
+                        user: models.User = Depends(authorize(perm="create_groups")),
+                        db: models.Session = Depends(get_db)
+                    ) -> schemas.GroupInDBBase:
+    chatroom = await crud.get_obj_or_404(db,models.ChatRoom,group_create.chatroom_id)
+    if user not in chatroom.members:
+        raise HTTPException(status_code=403,detail={"message":"User not authorized to create group in this chatroom"})
+    return await crud.create_obj(db,models.Group,group_create)
+
+@router.get("/groups",response_model=list[schemas.GroupInDBBase],tags=["Chat"])
+async def get_groups(
+                        user: models.User = Depends(authorize(perm="view_groups")),
+                        db: models.Session = Depends(get_db)
+                    ) -> List[schemas.GroupInDBBase]:
+    # get groups where the user is a member
+    chatrooms = db.execute(select(models.ChatRoom).where(models.ChatRoom.members.contains(user))).scalars().all()
+    chatroom_ids = [c.id for c in chatrooms]
+    groups = db.execute(select(models.Group).where(models.Group.chatroom_id.in_(chatroom_ids))).scalars().all()
+    return groups
+
+@router.get("/groups/{group_id}",response_model=schemas.GroupInDBBase,tags=["Chat"])
+async def get_group(
+                        group_id: UUID4,
+                        user: models.User = Depends(authorize(perm="view_groups")),
+                        db: models.Session = Depends(get_db)
+                    ) -> schemas.GroupInDBBase:
+    group = await crud.get_obj_or_404(db,models.Group,group_id)
+    if user not in group.chatroom.members:
+        raise HTTPException(status_code=403,detail={"message":"User not authorized to view this resource"})
+    return group
+
+@router.put("/groups/{group_id}", response_model=schemas.GroupInDBBase,tags=["Chat"])
+async def update_group(
+                        group_id: UUID4,
+                        group_update: schemas.GroupUpdate,
+                        user: models.User = Depends(authorize(perm="update_groups")),
+                        db: models.Session = Depends(get_db)
+                    ) -> schemas.GroupInDBBase:
+    group = await crud.get_obj_or_404(db,models.Group,group_id)
+    if user not in group.chatroom.members:
+        raise HTTPException(status_code=403,detail={"message":"User not authorized to update this resource"})
+    return await crud.update_group(db,group_id,group_update)
+
+@router.delete("/groups/{group_id}",status_code=204,tags=["Chat"])
+async def delete_group(
+                        group_id: UUID4,
+                        user: models.User = Depends(authorize(perm="delete_groups")),
+                        db: models.Session = Depends(get_db)
+                    ):
+    group = await crud.get_obj_or_404(db,models.Group,group_id)
+    if user not in group.chatroom.members:
+        raise HTTPException(status_code=403,detail={"message":"User not authorized to delete this resource"})
+    is_deleted = await crud.delete_obj(db,models.Group,group_id)
+    if not is_deleted:
+        raise HTTPException(status_code=500,detail={"message":"Something happened while trying to delete the resource"})
+    return None
+
+# create chat or use websocket to send chat

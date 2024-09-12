@@ -258,6 +258,7 @@ async def test_chatrooms_api(mock_send_sms,client,db):
     
     # get chatrooms
     response = client.get("/api/chat/rooms/",headers={"Authorization": f"Bearer {access_token}"})
+    print(response.json())
     assert response.status_code == 200
     assert len(response.json()) >= 1
     # get single chatroom
@@ -279,4 +280,59 @@ async def test_chatrooms_api(mock_send_sms,client,db):
     assert response.status_code == 204
     chatroom = db.execute(select(models.ChatRoom).where(models.ChatRoom.id == uuid.UUID(chatroom_id))).scalar_one_or_none()
     assert chatroom is None
-    
+
+# test groups api calls
+@pytest.mark.asyncio
+@patch("utils.smsleopard_send_sms")
+async def test_groups_api(mock_send_sms,client,db):
+    mock_send_sms.return_value = True
+    access_token: str = await authenticate(client,db)
+    # get chatroom where user is a member
+        # create chatroom
+    members: list[models.User] = db.execute(select(models.User)).scalars().all()[:2]
+    chatroom_data = {
+        "members": [m.to_dict() for m in members],
+    }
+    create_response = client.post("/api/chat/rooms/",json=chatroom_data,headers={"Authorization": f"Bearer {access_token}"})
+    # print(create_response.json())
+    assert create_response.status_code == 201
+    assert create_response.json()["socket_room_id"] != None
+    assert create_response.json()["members"][0]["phone"] == members[0].phone
+    chatroom_id = create_response.json()["id"]
+    create_group_data = {
+        "name": "Test Group",
+        "description": "Test Group Description",
+        "chatroom_id": chatroom_id
+    }
+    create_group_response = client.post("/api/chat/groups/",json=create_group_data,headers={"Authorization": f"Bearer {access_token}"})
+    assert create_group_response.status_code == 201
+    assert create_group_response.json()["name"] == create_group_data["name"]
+    assert create_group_response.json()["description"] == create_group_data["description"]
+    assert create_group_response.json()["chatroom_id"] == create_group_data["chatroom_id"]
+    # get groups
+    response = client.get("/api/chat/groups/",headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert len(response.json()) >= 1
+    # get single group
+    group_id = response.json()[0]["id"]
+    group_db = db.execute(select(models.Group).where(models.Group.id == uuid.UUID(group_id))).scalar_one_or_none()
+    response = client.get(f"/api/chat/groups/{group_id}",headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert response.json()["name"] == group_db.name
+    assert response.json()["description"] == group_db.description
+    # update group
+    group_data = {
+        "name": "Test Group 1",
+        "description": "Test Group Description 1",
+        "chatroom_id": str(group_db.chatroom_id)
+    }
+    response = client.put(f"/api/chat/groups/{group_id}",json=group_data,headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert response.json()["name"] == group_data["name"]
+    assert response.json()["description"] == group_data["description"]
+    assert response.json()["chatroom_id"] == group_data["chatroom_id"]
+    # delete group
+    response = client.delete(f"/api/chat/groups/{group_id}",headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 204
+    group = db.execute(select(models.Group).where(models.Group.id == uuid.UUID(group_id))).scalar_one_or_none()
+    assert group is None

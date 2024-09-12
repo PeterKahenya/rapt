@@ -191,7 +191,7 @@ async def update_clientapp(db: Session, client_app_id: UUID4, client_app_update_
 
 # create chatroom
 async def create_chatroom(db: Session, chatroom_create_data: schemas.ChatRoomCreate) -> models.ChatRoom:
-    logger.info(f"Creating chatroom with data: {chatroom_create_data}")
+    logger.info(f"Creating chatroom with data: {chatroom_create_data.model_dump()}")
     members = []
     for user in chatroom_create_data.members:
         user_obj = await get_obj_or_404(db=db, model=models.User, id=user.id)
@@ -212,8 +212,8 @@ async def update_chatroom(db: Session, chatroom_id: UUID4, chatroom_update_data:
             raise ValueError("Chatroom must have at least 2 members")
         members = []
         for user in chatroom_update_data.members:
-            user_obj = await get_obj_or_404(db=db, model=models.User,  id=user.id)
-            members.append(user_obj)
+            user_db = await get_obj_or_404(db=db, model=models.User,  id=user.id)
+            members.append(user_db)
         if len(members) != len(set(members)):
             raise ValueError("Chatroom members must be unique")
         for member in members:
