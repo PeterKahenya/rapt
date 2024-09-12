@@ -3,6 +3,7 @@ import models
 import pytest
 from sqlalchemy import select
 from unittest.mock import patch
+import uuid
 
 pytest_plugins = ('pytest_asyncio',)
     
@@ -237,4 +238,45 @@ async def test_filter(mock_send_sms,client,db):
     assert response.status_code == 200
     assert len(response.json()["data"]) >= 1
     assert "254" in response.json()["data"][0]["phone"]
+    
+# test chatrooms api calls
+@pytest.mark.asyncio
+@patch("utils.smsleopard_send_sms")
+async def test_chatrooms_api(mock_send_sms,client,db):
+    mock_send_sms.return_value = True
+    access_token: str = await authenticate(client,db)
+    # create chatroom
+    members: list[models.User] = db.execute(select(models.User)).scalars().all()[:2]
+    chatroom_data = {
+        "members": [m.to_dict() for m in members],
+    }
+    create_response = client.post("/api/chat/rooms/",json=chatroom_data,headers={"Authorization": f"Bearer {access_token}"})
+    # print(create_response.json())
+    assert create_response.status_code == 201
+    assert create_response.json()["socket_room_id"] != None
+    assert create_response.json()["members"][0]["phone"] == members[0].phone
+    
+    # get chatrooms
+    response = client.get("/api/chat/rooms/",headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert len(response.json()) >= 1
+    # get single chatroom
+    chatroom_id = create_response.json()["id"]
+    chatroom_db = db.execute(select(models.ChatRoom).where(models.ChatRoom.id == uuid.UUID(chatroom_id))).scalar_one_or_none()
+    response = client.get(f"/api/chat/rooms/{chatroom_id}",headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert response.json()["socket_room_id"] == chatroom_db.socket_room_id
+    # update chatroom
+    members: list[models.User] = db.execute(select(models.User)).scalars().all()[:3]
+    chatroom_data = {
+        "members": [m.to_dict() for m in members],
+    }
+    response = client.put(f"/api/chat/rooms/{chatroom_id}",json=chatroom_data,headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert response.json()["members"][0]["phone"] == members[0].phone
+    # delete chatroom
+    response = client.delete(f"/api/chat/rooms/{chatroom_id}",headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 204
+    chatroom = db.execute(select(models.ChatRoom).where(models.ChatRoom.id == uuid.UUID(chatroom_id))).scalar_one_or_none()
+    assert chatroom is None
     
