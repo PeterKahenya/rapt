@@ -5,6 +5,7 @@ import uvicorn
 import os
 import models
 import auth
+import chat
 from config import DATABASE_URL,logger
 from depends import get_db
 
@@ -16,6 +17,7 @@ fastapi_config = {
 
 app = FastAPI(**fastapi_config)
 app.include_router(auth.router,prefix="/auth")
+app.include_router(chat.router,prefix="/chat")
 
 if __name__ == "__main__":
     SERVICE_PORT = os.environ.get("SERVICE_PORT")
