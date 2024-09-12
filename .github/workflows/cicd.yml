@@ -156,7 +156,7 @@ jobs:
                   SMSLEOPARD_API_KEY=${{ env.SMSLEOPARD_API_KEY }}
                   SMSLEOPARD_API_SECRET=${{ env.SMSLEOPARD_API_SECRET }}
                   EOF
-        
+
                   kubectl delete secrets rapt-prod-env-secrets || true
                   kubectl create secret generic rapt-prod-env-secrets --from-env-file ./.env.prod
             
