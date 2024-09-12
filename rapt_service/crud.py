@@ -16,7 +16,7 @@ import uuid
 """
 # generic create object
 async def create_obj(db: Session, model: models.Model, schema_model: BaseModel) -> models.Model:
-    logger.info(f"Creating {model.__name__.__class__} with params: {schema_model.model_dump()}")
+    logger.info(f"Creating {model.__name__} with params: {schema_model.model_dump()}")
     obj = model(**schema_model.model_dump())
     db.add(obj)
     db.commit()
@@ -28,7 +28,7 @@ async def get_obj_or_404(db: Session, model: models.Model, id: UUID4) -> models.
     """
         Returns one object from the database by pk id or raise an exception:  sqlalchemy.orm.exc.NoResultFound if no result is found
     """
-    logger.info(f"Getting {model.__name__.__class__} with id: {id}")
+    logger.info(f"Getting {model.__name__} with id: {id}")
     try:
         return db.execute(select(model).where(model.id == id)).scalar_one()
     except exc.NoResultFound:
@@ -39,7 +39,7 @@ async def get_obj_or_None(db: Session, model: models.Model, id: UUID4) -> models
     """
         Returns one object from the database by pk id or return None if no result is found
     """
-    logger.info(f"Getting {model.__name__.__class__} with id: {id}")
+    logger.info(f"Getting {model.__name__} with id: {id}")
     return db.execute(select(model).where(model.id == id)).scalar_one_or_none()
 
 # generic filter objects
@@ -93,7 +93,7 @@ async def search_objects(db: Session, model: models.Model, q: str) -> Sequence[m
 
 # generic delete object
 async def delete_obj(db: Session, model: models.Model, id: UUID4) -> bool:
-    logger.info(f"Deleting {model.__name__.__class__} with id: {id}")
+    logger.info(f"Deleting {model.__name__} with id: {id}")
     obj = await get_obj_or_404(db, model, id)
     db.execute(delete(model).where(model.id == obj.id))
     db.commit()
