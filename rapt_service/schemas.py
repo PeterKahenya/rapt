@@ -157,6 +157,7 @@ class GroupUpdate(BaseModel):
 class GroupInDBBase(ModelInDBBase):
     name: str
     description: str
+    chatroom_id: UUID4
     chatroom: ChatRoomInDBBase
 
 class MediaObject(BaseModel):
