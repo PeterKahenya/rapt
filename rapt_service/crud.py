@@ -5,9 +5,9 @@ import models
 import schemas
 from config import logger
 from typing import List, Any, Dict,Optional,Sequence
-from sqlalchemy import or_
+from sqlalchemy import or_, exc
 import datetime
-from fastapi import Query
+from fastapi import HTTPException, Query
 import uuid
 
 
@@ -29,7 +29,10 @@ async def get_obj_or_404(db: Session, model: models.Model, id: UUID4) -> models.
         Returns one object from the database by pk id or raise an exception:  sqlalchemy.orm.exc.NoResultFound if no result is found
     """
     logger.info(f"Getting {model.__name__.__class__} with id: {id}")
-    return db.execute(select(model).where(model.id == id)).scalar_one()
+    try:
+        return db.execute(select(model).where(model.id == id)).scalar_one()
+    except exc.NoResultFound:
+        raise HTTPException(status_code=404,detail={"message":f"{model.__name__} with id {id} not found"})
 
 # generic get object or return None
 async def get_obj_or_None(db: Session, model: models.Model, id: UUID4) -> models.Model:
@@ -240,7 +243,9 @@ async def update_group(db: Session, group_id: UUID4, group_update_data: schemas.
 async def create_chat(db: Session, chat_create_data: schemas.ChatCreate) -> models.Chat:
     logger.info(f"Creating chat with data: {chat_create_data}")
     sender = await get_obj_or_404(db=db, model=models.User, id=chat_create_data.sender_id)
-    room = await get_obj_or_404(db=db, model=models.ChatRoom, id=chat_create_data.room_id)
+    room: models.Chat = await get_obj_or_404(db=db, model=models.ChatRoom, id=chat_create_data.room_id)
+    if not room.is_member(sender):
+        raise HTTPException(status_code=403,detail={"message":"User is not a member of this chat"})   
     chat = models.Chat(chat_create_data.message, sender=sender, room=room)
     db.add(chat)
     db.commit()
