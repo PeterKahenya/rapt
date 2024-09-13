@@ -257,13 +257,14 @@ async def create_client_app(
                                 db: Session = Depends(get_db)
                             ) -> schemas.ClientAppInDBBase:
     try:
+        app_create.user_id = app_create.user_id if app_create.user_id else  user.id
         app_db: models.ClientApp = await crud.create_obj(db=db,model=models.ClientApp,schema_model=app_create)
+        db.commit()
+        db.refresh(app_db)
         return app_db
     except Exception as e:
         logger.error(f"Error in create_client_app: {str(e)}")
-        raise HTTPException(status_code=500,detail={
-            "message":"An unexpected error occurred"
-        })
+        raise HTTPException(status_code=500,detail={"message":f"An unexpected error: {e} occurred"})
 
 # get client apps
 @router.get("/apps/", status_code=200, tags=["Apps"])
@@ -297,6 +298,7 @@ async def update_client_app(
                                 db: Session = Depends(get_db)
                             ) -> schemas.ClientAppInDBBase:
     try:
+        app_update.user_id = app_update.user_id if app_update.user_id else user.id
         app_db: models.ClientApp = await crud.update_clientapp(
                                                                 db=db,
                                                                 client_app_id=app_id,
@@ -306,7 +308,7 @@ async def update_client_app(
     except Exception as e:
         logger.error(f"Error in update_client_app: {str(e)}")
         raise HTTPException(status_code=500,detail={
-            "message":"An unexpected error occurred"
+            "message":f"An unexpected error: {e} occurred"
         })
 
 # delete client app

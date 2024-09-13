@@ -15,6 +15,16 @@ pytest_plugins = ('pytest_asyncio',)
 async def authenticate(client,db):
     app = db.execute(select(models.ClientApp)).scalars().first()
     user = db.execute(select(models.User).where(models.User.phone == test_settings.superuser_phone)).scalars().first()
+    if not user:
+        user = models.User(
+            phone=test_settings.superuser_phone,
+            name=faker.name(),
+            is_superuser=True,
+            is_active=True,
+            is_verified=True
+        )
+        db.add(user)
+        db.commit()
     #test login by sending phone, client_id, client_secret as form data
     response = client.post("/auth/login",data={"phone": user.phone,"client_id": app.client_id,"client_secret": app.client_secret})
     assert response.status_code == 200
@@ -255,12 +265,11 @@ async def test_chatrooms_api(mock_send_sms,client,db):
     create_response = client.post("/api/chat/rooms/",json=chatroom_data,headers={"Authorization": f"Bearer {access_token}"})
     # print(create_response.json())
     assert create_response.status_code == 201
-    assert create_response.json()["socket_room_id"] != None
     assert create_response.json()["members"][0]["phone"] == members[0].phone
     
     # get chatrooms
     response = client.get("/api/chat/rooms/",headers={"Authorization": f"Bearer {access_token}"})
-    print(response.json())
+    # print(response.json())
     assert response.status_code == 200
     assert len(response.json()) >= 1
     # get single chatroom
@@ -268,7 +277,6 @@ async def test_chatrooms_api(mock_send_sms,client,db):
     chatroom_db = db.execute(select(models.ChatRoom).where(models.ChatRoom.id == uuid.UUID(chatroom_id))).scalar_one_or_none()
     response = client.get(f"/api/chat/rooms/{chatroom_id}",headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == 200
-    assert response.json()["socket_room_id"] == chatroom_db.socket_room_id
     # update chatroom
     members: list[models.User] = db.execute(select(models.User)).scalars().all()[:3]
     chatroom_data = {
@@ -298,7 +306,6 @@ async def test_groups_api(mock_send_sms,client,db):
     create_response = client.post("/api/chat/rooms/",json=chatroom_data,headers={"Authorization": f"Bearer {access_token}"})
     # print(create_response.json())
     assert create_response.status_code == 201
-    assert create_response.json()["socket_room_id"] != None
     assert create_response.json()["members"][0]["phone"] == members[0].phone
     chatroom_id = create_response.json()["id"]
     create_group_data = {

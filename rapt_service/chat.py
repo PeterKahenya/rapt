@@ -8,6 +8,7 @@ import models
 import schemas
 import utils
 import crud
+from config import logger
 
 router = APIRouter(dependencies=[Depends(get_db)])
 
@@ -19,7 +20,7 @@ async def create_room(
                     ) -> schemas.ChatRoomInDBBase:
     # check if the room already exists with the same members
     if user.id not in [u.id for u in room_create.members]:
-        print("User not in members, adding user to members")
+        # print("User not in members, adding user to members")
         room_create.members.append(schemas.ModelBase(id=user.id))
     members = [await crud.get_obj_or_404(db,models.User,u.id) for u in room_create.members]
     chatrooms = db.execute(select(models.ChatRoom)).scalars().all()
@@ -38,7 +39,7 @@ async def get_rooms(
                         user: models.User = Depends(authorize(perm="read_chatrooms")),
                         db: models.Session = Depends(get_db)
                     ) -> List[schemas.ChatRoomInDBBase]:
-    print(user.chatrooms)
+    # print(user.chatrooms)
     return user.chatrooms
 
 # get single chatroom
@@ -61,7 +62,7 @@ async def update_room(
                         user: models.User = Depends(authorize(perm="update_chatrooms")),
                         db: models.Session = Depends(get_db)
                     ) -> schemas.ChatRoomInDBBase:
-    # check if user is a member of the room_update members list using user id
+    # check if logged in user is a member of the room_update members list using user id
     if not any([u.id == user.id for u in room_update.members]):
         room_update.members.append(schemas.ModelBase(id=user.id))
     return await crud.update_chatroom(db,room_id,room_update)

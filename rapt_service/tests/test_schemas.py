@@ -137,19 +137,17 @@ def test_clientapp_schema(db):
 # test chatroom schemas
 def test_chatroom_schema(db):
     #test create chatroom object
-    user1 = db.execute(select(models.User)).scalars().all()
+    members = db.execute(select(models.User)).scalars().all()[:3]
     chatroom_create = schemas.ChatRoomCreate(**{
-        "socket_room_id": "test_socket_room_id",
-        "members": [schemas.ModelBase.model_validate(user).model_dump() for user in user1]})
-    assert chatroom_create.socket_room_id == "test_socket_room_id"
-    assert chatroom_create.members[0].id == user1[0].id
+        "members": [schemas.ModelBase.model_validate(user).model_dump() for user in members]})
+    assert chatroom_create.members[0].id == members[0].id
+    new_members = db.execute(select(models.User)).scalars().all()[2:5]
     chatroom_update = schemas.ChatRoomUpdate(**{
-        "socket_room_id": "test_socket_room_id1"
+         "members": [schemas.ModelBase.model_validate(user).model_dump() for user in new_members]
     })
-    assert chatroom_update.socket_room_id == "test_socket_room_id1"
+    assert chatroom_update.members[0].id == new_members[0].id
     chatroom_db = db.execute(select(models.ChatRoom)).scalars().first()
     chatroom_schema = schemas.ChatRoomInDBBase.model_validate(chatroom_db)
-    assert chatroom_schema.socket_room_id == chatroom_db.socket_room_id
     assert chatroom_schema.members[0].id == chatroom_db.members[0].id
     assert len(chatroom_schema.members) == len(chatroom_db.members)
     assert len(chatroom_schema.room_chats) == len(chatroom_db.room_chats)

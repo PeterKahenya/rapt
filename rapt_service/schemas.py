@@ -114,7 +114,7 @@ class RefreshToken(BaseModel):
 class ClientAppCreate(BaseModel):
     name: str
     description: str
-    user_id: UUID4
+    user_id: Optional[UUID4] = None
     
 class ClientAppUpdate(BaseModel):
     name: Optional[str] = None
@@ -134,11 +134,9 @@ class ChatRoomCreate(BaseModel):
     members: List[ModelBase]
 
 class ChatRoomUpdate(BaseModel):
-    socket_room_id: Optional[str] = None
     members: List[ModelBase] | None = []
     
 class ChatRoomInDBBase(ModelInDBBase):
-    socket_room_id: str
     members: List[UserInDBBase] | None
     room_chats: List["ChatInDBBase"] | None
     

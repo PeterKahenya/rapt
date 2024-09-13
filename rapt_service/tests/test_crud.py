@@ -252,11 +252,10 @@ async def test_chatroom_crud(db):
     assert len(chatrooms) > 0
     # update chatroom
     chatroom_update = schemas.ChatRoomUpdate(**{
-        "socket_room_id": "socket_room_id1",
         "members": [m.to_dict() for m in members]
     })
     chatroom_db = await crud.update_chatroom(db, chatroom_db.id, chatroom_update)
-    assert chatroom_db.socket_room_id == "socket_room_id1"
+    assert chatroom_db in db
     # delete chatroom
     is_deleted = await crud.delete_obj(db, models.ChatRoom, chatroom_db.id)
     assert is_deleted

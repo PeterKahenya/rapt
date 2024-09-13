@@ -177,7 +177,6 @@ async def update_clientapp(db: Session, client_app_id: UUID4, client_app_update_
     _ = await get_obj_or_404(db=db, model=models.User,  id=client_app_update_data.user_id)
     client_app.name = client_app_update_data.name if client_app_update_data.name else client_app.name
     client_app.description = client_app_update_data.description if client_app_update_data.description else client_app.description
-    client_app.user_id = client_app_update_data.user_id if client_app_update_data.user_id else client_app.user_id
     db.commit()
     db.refresh(client_app)
     return client_app
@@ -199,7 +198,6 @@ async def create_chatroom(db: Session, chatroom_create_data: schemas.ChatRoomCre
 async def update_chatroom(db: Session, chatroom_id: UUID4, chatroom_update_data: schemas.ChatRoomUpdate) -> models.ChatRoom:
     logger.info(f"Updating chatroom with id: {chatroom_id}")
     chatroom = await get_obj_or_404(db=db, model=models.ChatRoom,  id=chatroom_id)
-    chatroom.socket_room_id = chatroom_update_data.socket_room_id if chatroom_update_data.socket_room_id else chatroom.socket_room_id
     if chatroom_update_data.members:
         if len(chatroom_update_data.members) < 2:
             raise ValueError("Chatroom must have at least 2 members")
