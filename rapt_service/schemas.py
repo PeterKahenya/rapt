@@ -85,7 +85,6 @@ class UserUpdate(BaseModel):
     last_seen: Optional[datetime] = None
     contacts: Optional[List[Contact]] = []
     roles: Optional[List[ModelBase]] = []
-    client_apps: Optional[List[ModelBase]] = []
     
 class UserInDBBase(ModelInDBBase):
     phone: str
