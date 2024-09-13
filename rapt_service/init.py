@@ -1,12 +1,15 @@
+from pydantic_settings import BaseSettings
 from sqlalchemy import create_engine, select
 import crud
 import models
 from sqlalchemy.orm import Session,sessionmaker
 import config
 from config import settings,DATABASE_URL
+import utils
+from config import settings
 
 
-def initialize_db(db: Session):
+def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
     for content in models.Model.metadata.tables.values():
         content_types = db.execute(select(models.ContentType).where(models.ContentType.content==content.name)).scalars().all()
         if not content_types:
@@ -38,9 +41,9 @@ def initialize_db(db: Session):
     else:
         superuser_role = superuser_role[0]
     # create superuser
-    superuser = db.execute(select(models.User).where(models.User.phone=="254102227267")).scalar_one_or_none()
+    superuser = db.execute(select(models.User).where(models.User.phone==settings.superuser_phone)).scalar_one_or_none()
     if not superuser:
-        superuser = models.User(phone="254102227267",name="Admin", is_superuser=True, is_active=True, is_verified=True)
+        superuser = models.User(phone=settings.superuser_phone,name="Admin", is_superuser=True, is_active=True, is_verified=True)
         superuser.roles.append(superuser_role)
         db.add(superuser)
         db.commit()
@@ -53,8 +56,15 @@ def initialize_db(db: Session):
         db.add(clientapp)
         db.commit()
         db.refresh(clientapp)
-        #TODO: Email developer with superuser phonenumber and default clientapp credentials
-    print(f"Client ID: {clientapp.client_id} \nClient Secret: {clientapp.client_secret}")
+    if not is_test:
+        client_credentials_email = f"""
+            Hello Admin,
+            Your superuser phone number is: {superuser.phone}
+            Your default clientapp credentials are:
+            Client ID: {clientapp.client_id}
+            Client Secret: {clientapp.client_secret}
+        """
+        utils.mailtrap_send_email(to=("kahenya0@gmail.com","System Admin"),subject="RaptChat Superuser Credentials",message=client_credentials_email)
     
     
 
@@ -64,6 +74,6 @@ if __name__ == '__main__':
     models.Model.metadata.create_all(bind=engine)
     session_local = sessionmaker(autocommit=False,autoflush=False,bind=engine)
     db = session_local()
-    initialize_db(db)
+    initialize_db(db, settings)
     db.close()
     print("Database Initialized")
