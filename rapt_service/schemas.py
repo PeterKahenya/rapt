@@ -164,8 +164,8 @@ class MediaObject(BaseModel):
 # chat schema
 class ChatCreate(BaseModel):
     message: str
-    sender_id: UUID4
-    room_id: UUID4
+    sender_id: Optional[UUID4] = None
+    room_id: Optional[UUID4] = None
     media: Optional[List[MediaObject]] = None
 
 class ChatUpdate(BaseModel):

@@ -358,8 +358,7 @@ async def test_websockets(mock_send_sms,client,db):
 
     with client.websocket_connect(f"/chatsocket/{room_id}",headers={"Authorization":f"Bearer {access_token}"}) as socket:
         # test connection and 'online' message
-        data = socket.receive_json()
-        data_json = json.loads(data)
+        data_json = socket.receive_json()
         assert data_json["type"] == "online" and data_json["user"]["phone"] == test_settings.superuser_phone
         # test chat message and response
         chat_socket_data = {
@@ -369,12 +368,10 @@ async def test_websockets(mock_send_sms,client,db):
             },
             "obj": {
                 "message": "Hello",
-                "room_id": room_id,
             }
         }
         socket.send_json(chat_socket_data)
-        chat_alert = socket.receive_json()
-        chat_alert_json = json.loads(chat_alert)
+        chat_alert_json = socket.receive_json()
         assert chat_alert_json["type"] == "chat" and chat_alert_json["obj"]["message"] == "Hello"
         # test read message and response
         read_socket_data = {
@@ -388,8 +385,7 @@ async def test_websockets(mock_send_sms,client,db):
             }
         }
         socket.send_json(read_socket_data)
-        read_alert = socket.receive_json()
-        read_alert_json = json.loads(read_alert)
+        read_alert_json = socket.receive_json()
         assert read_alert_json["type"] == "read" and read_alert_json["obj"]["id"] == chat_alert_json["obj"]["id"]
         # test reading status
         read_status_socket_data = {
@@ -399,8 +395,7 @@ async def test_websockets(mock_send_sms,client,db):
             }
         }
         socket.send_json(read_status_socket_data)
-        read_status_alert = socket.receive_json()
-        read_status_alert_json = json.loads(read_status_alert)
+        read_status_alert_json = socket.receive_json()
         assert read_status_alert_json["type"] == "reading"
         # test away status
         away_status_socket_data = {
@@ -410,8 +405,7 @@ async def test_websockets(mock_send_sms,client,db):
             }
         }
         socket.send_json(away_status_socket_data)
-        away_status_alert = socket.receive_json()
-        away_status_alert_json = json.loads(away_status_alert)
+        away_status_alert_json = socket.receive_json()
         assert away_status_alert_json["type"] == "away"
         # test typing status
         typing_status_socket_data = {
@@ -421,8 +415,7 @@ async def test_websockets(mock_send_sms,client,db):
             }
         }
         socket.send_json(typing_status_socket_data)
-        typing_status_alert = socket.receive_json()
-        typing_status_alert_json = json.loads(typing_status_alert)
+        typing_status_alert_json = socket.receive_json()
         assert typing_status_alert_json["type"] == "typing"
         # test thinking status
         thinking_status_socket_data = {
@@ -432,8 +425,7 @@ async def test_websockets(mock_send_sms,client,db):
             }
         }
         socket.send_json(thinking_status_socket_data)
-        thinking_status_alert = socket.receive_json()
-        thinking_status_alert_json = json.loads(thinking_status_alert)
+        thinking_status_alert_json = socket.receive_json()
         assert thinking_status_alert_json["type"] == "thinking"
         # test offline status
         offline_status_socket_data = {
@@ -443,8 +435,7 @@ async def test_websockets(mock_send_sms,client,db):
             }
         }
         socket.send_json(offline_status_socket_data)
-        offline_status_alert = socket.receive_json()
-        offline_status_alert_json = json.loads(offline_status_alert)
+        offline_status_alert_json = socket.receive_json()
         assert offline_status_alert_json["type"] == "offline"
     
 # test get chat api calls

@@ -12,7 +12,7 @@ from config import logger
 
 router = APIRouter(dependencies=[Depends(get_db)])
 
-@router.post("/rooms",status_code=201,tags=["Chat"])
+@router.post("/rooms",status_code=201,tags=["Rooms"])
 async def create_room(
                         room_create: schemas.ChatRoomCreate,
                         user: models.User = Depends(authorize(perm="create_chatrooms")),
@@ -34,7 +34,7 @@ async def create_room(
 # TODO: we should add admin permission to 'read_all_chatrooms' otherwise we should only return chatrooms where the user is a member
 
 # get all chatrooms where the user is a member
-@router.get("/rooms",response_model=list[schemas.ChatRoomInDBBase],tags=["Chat"])
+@router.get("/rooms",response_model=list[schemas.ChatRoomInDBBase],tags=["Rooms"])
 async def get_rooms(
                         user: models.User = Depends(authorize(perm="read_chatrooms")),
                         db: models.Session = Depends(get_db)
@@ -43,7 +43,7 @@ async def get_rooms(
     return user.chatrooms
 
 # get single chatroom
-@router.get("/rooms/{room_id}",response_model=schemas.ChatRoomInDBBase,tags=["Chat"])
+@router.get("/rooms/{room_id}",response_model=schemas.ChatRoomInDBBase,tags=["Rooms"])
 async def get_room(
                         room_id: UUID4,
                         user: models.User = Depends(authorize(perm="read_chatrooms")),
@@ -55,7 +55,7 @@ async def get_room(
     return chatroom
 
 # update chatroom
-@router.put("/rooms/{room_id}",response_model=schemas.ChatRoomInDBBase,tags=["Chat"])
+@router.put("/rooms/{room_id}",response_model=schemas.ChatRoomInDBBase,tags=["Rooms"])
 async def update_room(
                         room_id: UUID4,
                         room_update: schemas.ChatRoomUpdate,
@@ -68,7 +68,7 @@ async def update_room(
     return await crud.update_chatroom(db,room_id,room_update)
 
 # delete chatroom
-@router.delete("/rooms/{room_id}",status_code=204,tags=["Chat"])
+@router.delete("/rooms/{room_id}",status_code=204,tags=["Rooms"])
 async def delete_room(
                         room_id: UUID4,
                         user: models.User = Depends(authorize(perm="delete_chatrooms")),
@@ -83,7 +83,7 @@ async def delete_room(
     return None
 
 # create group
-@router.post("/groups",status_code=201,tags=["Chat"])
+@router.post("/groups",status_code=201,tags=["Groups"])
 async def create_group(
                         group_create: schemas.GroupCreate,
                         user: models.User = Depends(authorize(perm="create_groups")),
@@ -94,7 +94,7 @@ async def create_group(
         raise HTTPException(status_code=403,detail={"message":"User not authorized to create group in this chatroom"})
     return await crud.create_obj(db,models.Group,group_create)
 
-@router.get("/groups",response_model=list[schemas.GroupInDBBase],tags=["Chat"])
+@router.get("/groups",response_model=list[schemas.GroupInDBBase],tags=["Groups"])
 async def get_groups(
                         user: models.User = Depends(authorize(perm="read_groups")),
                         db: models.Session = Depends(get_db)
@@ -105,7 +105,7 @@ async def get_groups(
     groups = db.execute(select(models.Group).where(models.Group.chatroom_id.in_(chatroom_ids))).scalars().all()
     return groups
 
-@router.get("/groups/{group_id}",response_model=schemas.GroupInDBBase,tags=["Chat"])
+@router.get("/groups/{group_id}",response_model=schemas.GroupInDBBase,tags=["Groups"])
 async def get_group(
                         group_id: UUID4,
                         user: models.User = Depends(authorize(perm="read_groups")),
@@ -116,7 +116,7 @@ async def get_group(
         raise HTTPException(status_code=403,detail={"message":"User not authorized to view this resource"})
     return group
 
-@router.put("/groups/{group_id}", response_model=schemas.GroupInDBBase,tags=["Chat"])
+@router.put("/groups/{group_id}", response_model=schemas.GroupInDBBase,tags=["Groups"])
 async def update_group(
                         group_id: UUID4,
                         group_update: schemas.GroupUpdate,
@@ -128,7 +128,7 @@ async def update_group(
         raise HTTPException(status_code=403,detail={"message":"User not authorized to update this resource"})
     return await crud.update_group(db,group_id,group_update)
 
-@router.delete("/groups/{group_id}",status_code=204,tags=["Chat"])
+@router.delete("/groups/{group_id}",status_code=204,tags=["Groups"])
 async def delete_group(
                         group_id: UUID4,
                         user: models.User = Depends(authorize(perm="delete_groups")),
@@ -143,7 +143,7 @@ async def delete_group(
     return None
 
 # read chats
-@router.get("/rooms/{room_id}/chats",response_model=list[schemas.ChatInDBBase],tags=["Chat"])
+@router.get("/rooms/{room_id}/chats",response_model=list[schemas.ChatInDBBase],tags=["Chats"])
 async def get_chats(
                         room_id: UUID4,
                         user: models.User = Depends(authorize(perm="read_chats")),
@@ -155,7 +155,7 @@ async def get_chats(
     return chatroom.room_chats
 
 # get single chat
-@router.get("/rooms/{room_id}/chats/{chat_id}",response_model=schemas.ChatInDBBase,tags=["Chat"])
+@router.get("/rooms/{room_id}/chats/{chat_id}",response_model=schemas.ChatInDBBase,tags=["Chats"])
 async def get_chat(
                         room_id: UUID4,
                         chat_id: UUID4,
@@ -169,7 +169,7 @@ async def get_chat(
     return chat
 
 # delete chat
-@router.delete("/rooms/{room_id}/chats/{chat_id}",status_code=204,tags=["Chat"])
+@router.delete("/rooms/{room_id}/chats/{chat_id}",status_code=204,tags=["Chats"])
 async def delete_chat(
                         room_id: UUID4,
                         chat_id: UUID4,
