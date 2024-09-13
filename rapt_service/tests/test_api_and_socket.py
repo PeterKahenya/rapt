@@ -4,6 +4,8 @@ import pytest
 from sqlalchemy import select
 from unittest.mock import patch
 import uuid
+import json
+from .conftest import settings as test_settings, faker
 
 pytest_plugins = ('pytest_asyncio',)
     
@@ -12,7 +14,7 @@ pytest_plugins = ('pytest_asyncio',)
 # test authentication api calls
 async def authenticate(client,db):
     app = db.execute(select(models.ClientApp)).scalars().first()
-    user = db.execute(select(models.User).where(models.User.phone == "254102227267")).scalars().first()
+    user = db.execute(select(models.User).where(models.User.phone == test_settings.superuser_phone)).scalars().first()
     #test login by sending phone, client_id, client_secret as form data
     response = client.post("/auth/login",data={"phone": user.phone,"client_id": app.client_id,"client_secret": app.client_secret})
     assert response.status_code == 200
@@ -98,12 +100,12 @@ async def test_users_api(mock_send_sms,client,db):
     access_token: str = await authenticate(client,db)
     # create user
     user_data = {
-        "phone": "254711111111",
-        "name": "Test User11"
+        "phone": faker.unique.phone_number()[0:11],
+        "name": faker.name()
     }
     response = client.post("/auth/users/",json=user_data,headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == 201
-    assert response.json()["phone"] == "254711111111"
+    assert response.json()["phone"] == user_data["phone"]
     # get users
     response = client.get("/auth/users/",headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == 200
@@ -117,14 +119,14 @@ async def test_users_api(mock_send_sms,client,db):
     # update user
     users: list[models.User] = db.execute(select(models.User)).scalars().all()
     user_id = users[0].id
-    contacts = [users[1].to_dict(),users[2].to_dict(),users[3].to_dict(),{"name": "Contact 33","phone": "254733333333"}]
+    contacts = [users[1].to_dict(),users[2].to_dict(),users[3].to_dict(),{"name": "Contact 33","phone": faker.unique.phone_number()[0:11]}]
     roles: list[models.Role] = db.execute(select(models.Role)).scalars().all()[:2]
     update_data = {
         "name": "Test User 22",
         "is_superuser": False,
         "is_active": False,
         "is_verified": True,
-        "phone": "254722222222",
+        "phone": faker.unique.phone_number()[0:11],
         "contacts": contacts,
         "roles": [r.to_dict() for r in roles]
     }
@@ -336,3 +338,132 @@ async def test_groups_api(mock_send_sms,client,db):
     assert response.status_code == 204
     group = db.execute(select(models.Group).where(models.Group.id == uuid.UUID(group_id))).scalar_one_or_none()
     assert group is None
+
+# test chat websockets
+@pytest.mark.asyncio
+@patch("utils.smsleopard_send_sms")
+async def test_websockets(mock_send_sms,client,db):
+    mock_send_sms.return_value = True
+    access_token: str = await authenticate(client,db)
+    # get chatroom where user is a member
+    room = db.execute(select(models.ChatRoom).where(models.ChatRoom.members.any(models.User.phone == test_settings.superuser_phone))).scalar_one_or_none()
+    room_id = str(room.id)
+
+    with client.websocket_connect(f"/chatsocket/{room_id}",headers={"Authorization":f"Bearer {access_token}"}) as socket:
+        # test connection and 'online' message
+        data = socket.receive_json()
+        data_json = json.loads(data)
+        assert data_json["type"] == "online" and data_json["user"]["phone"] == test_settings.superuser_phone
+        # test chat message and response
+        chat_socket_data = {
+            "type": "chat",
+            "user": {
+                "phone": test_settings.superuser_phone
+            },
+            "obj": {
+                "message": "Hello",
+                "room_id": room_id,
+            }
+        }
+        socket.send_json(chat_socket_data)
+        chat_alert = socket.receive_json()
+        chat_alert_json = json.loads(chat_alert)
+        assert chat_alert_json["type"] == "chat" and chat_alert_json["obj"]["message"] == "Hello"
+        # test read message and response
+        read_socket_data = {
+            "type": "read",
+            "user": {
+                "phone": test_settings.superuser_phone
+            },
+            "obj": {
+                "id": chat_alert_json["obj"]["id"],
+                "room_id": room_id,
+            }
+        }
+        socket.send_json(read_socket_data)
+        read_alert = socket.receive_json()
+        read_alert_json = json.loads(read_alert)
+        assert read_alert_json["type"] == "read" and read_alert_json["obj"]["id"] == chat_alert_json["obj"]["id"]
+        # test reading status
+        read_status_socket_data = {
+            "type": "reading",
+            "user": {
+                "phone": test_settings.superuser_phone
+            }
+        }
+        socket.send_json(read_status_socket_data)
+        read_status_alert = socket.receive_json()
+        read_status_alert_json = json.loads(read_status_alert)
+        assert read_status_alert_json["type"] == "reading"
+        # test away status
+        away_status_socket_data = {
+            "type": "away",
+            "user": {
+                "phone": test_settings.superuser_phone
+            }
+        }
+        socket.send_json(away_status_socket_data)
+        away_status_alert = socket.receive_json()
+        away_status_alert_json = json.loads(away_status_alert)
+        assert away_status_alert_json["type"] == "away"
+        # test typing status
+        typing_status_socket_data = {
+            "type": "typing",
+            "user": {
+                "phone": test_settings.superuser_phone
+            }
+        }
+        socket.send_json(typing_status_socket_data)
+        typing_status_alert = socket.receive_json()
+        typing_status_alert_json = json.loads(typing_status_alert)
+        assert typing_status_alert_json["type"] == "typing"
+        # test thinking status
+        thinking_status_socket_data = {
+            "type": "thinking",
+            "user": {
+                "phone": test_settings.superuser_phone
+            }
+        }
+        socket.send_json(thinking_status_socket_data)
+        thinking_status_alert = socket.receive_json()
+        thinking_status_alert_json = json.loads(thinking_status_alert)
+        assert thinking_status_alert_json["type"] == "thinking"
+        # test offline status
+        offline_status_socket_data = {
+            "type": "offline",
+            "user": {
+                "phone": test_settings.superuser_phone
+            }
+        }
+        socket.send_json(offline_status_socket_data)
+        offline_status_alert = socket.receive_json()
+        offline_status_alert_json = json.loads(offline_status_alert)
+        assert offline_status_alert_json["type"] == "offline"
+    
+# test get chat api calls
+@pytest.mark.asyncio
+@patch("utils.smsleopard_send_sms")
+async def test_chats_api(mock_send_sms,client,db):
+    mock_send_sms.return_value = True
+    access_token: str = await authenticate(client,db)
+    # get chatroom where user is a member and that has chats
+    rooms = db.execute(select(models.ChatRoom).where(models.ChatRoom.members.any(models.User.phone == test_settings.superuser_phone))).scalars().all()
+    for r in rooms:
+        if len(r.room_chats) != 0:
+            room = r
+            break
+    room_id = str(room.id)
+    # get chats
+    response = client.get(f"/api/chat/rooms/{room_id}/chats/",headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert len(response.json()) >= 1
+    # get single chat
+    chat_id = response.json()[0]["id"]
+    response = client.get(f"/api/chat/rooms/{room_id}/chats/{chat_id}",headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert response.json()["id"] == chat_id
+    # delete chat
+    response = client.delete(f"/api/chat/rooms/{room_id}/chats/{chat_id}",headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 204
+    chat = db.execute(select(models.Chat).where(models.Chat.id == uuid.UUID(chat_id))).scalar_one_or_none()
+    assert chat is None
