@@ -112,9 +112,8 @@ async def update_content_type(db: Session, content_type_id: UUID4, content_type_
 async def update_permission(db: Session, permission_id: UUID4, permission_update: schemas.PermissionUpdate) -> models.Permission:
     logger.info(f"Updating Permission with id: {permission_id}")
     permission = await get_obj_or_404(db, models.Permission, permission_id)
-    permission.name = permission_update.name if permission_update.name else permission.name
-    permission.codename = permission_update.codename if permission_update.codename else permission.codename
-    permission.content_type_id = permission_update.content_type_id if permission_update.content_type_id else permission.content_type_id
+    update_data = permission_update.model_dump(exclude_unset=True)
+    db.execute(update(models.Permission).where(models.Permission.id == permission_id).values(**update_data.model_dump()))
     db.commit()
     db.refresh(permission)
     return permission
@@ -141,43 +140,34 @@ async def update_role(db: Session, role_id: UUID4, role_update_data: schemas.Rol
 async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.UserUpdate) -> models.User:
     logger.info(f"Updating user with id: {user_id}")
     user: models.User = await get_obj_or_404(db=db, model=models.User,  id=user_id)
-    user.name = user_update_data.name if user_update_data.name else user.name
-    user.phone = user_update_data.phone if user_update_data.phone else user.phone
-    # TODO: Phone number should not be updatable
-    user.is_superuser = user_update_data.is_superuser if user_update_data.is_superuser else user.is_superuser
-    user.device_fcm_token = user_update_data.device_fcm_token if user_update_data.device_fcm_token else user.device_fcm_token
-    user.is_active = user_update_data.is_active if user_update_data.is_active else user.is_active
-    user.is_verified = user_update_data.is_verified if user_update_data.is_verified else user.is_verified
-    user.phone_verification_code = user_update_data.phone_verification_code if user_update_data.phone_verification_code else user.phone_verification_code
-    user.phone_verification_code_expiry_at = user_update_data.phone_verification_code_expiry_at if user_update_data.phone_verification_code_expiry_at else user.phone_verification_code_expiry_at
-    user.last_seen = user_update_data.last_seen if user_update_data.last_seen else user.last_seen
-    if user_update_data.roles:
-        if len(user_update_data.roles) == 0:
+    update_data = user_update_data.model_dump(exclude_unset=True)
+    roles = update_data.pop('roles', None)
+    contacts = update_data.pop('contacts', None)
+    if 'phone' in update_data:
+        user_with_phone = db.execute(select(models.User).where(models.User.phone == update_data['phone'])).scalar_one_or_none()
+        if user_with_phone and user_with_phone.id != user.id:
+            raise HTTPException(status_code=409,detail={"message":"User with phone number already exists"})    
+    db.execute(update(models.User).where(models.User.id == user_id).values(**update_data))
+    if roles is not None:
+        if len(roles) == 0:
             user.roles.clear()
-            db.commit()
         else:
-            for role in user_update_data.roles:
-                role_obj = await get_obj_or_404(db=db, model=models.Role,  id=role.id)
-                if role_obj not in user.roles:
-                    user.roles.append(role_obj)
-            db.commit()
-    logger.info(f"Updating user contacts with data: {user_update_data}")
-    if user_update_data.contacts:
-        # TODO: contacts should be updated in their own endpoint and function
-        if len(user_update_data.contacts) == 0:
+            role_ids = [r["id"] for r in roles]
+            new_roles = db.execute(select(models.Role).where(models.Role.id.in_(role_ids))).scalars().all()
+            user.roles = new_roles
+    if contacts is not None: # TODO: contacts should probably be updated in their own endpoint and function like /api/users/{user_id}/contacts
+        if len(contacts) == 0:
             user.contacts.clear()
-            db.commit()
         else:
             for contact in user_update_data.contacts:
-                contact_obj = await get_obj_or_None(db=db, model=models.User,  id=contact.id)
+                contact_obj = db.execute(select(models.User).where(models.User.phone == contact.phone)).scalar_one_or_none()
                 if not contact_obj:
                     contact_obj = await create_obj(db=db, model=models.User, schema_model=schemas.UserCreate(name=contact.name, phone=contact.phone))
                 if contact_obj not in user.contacts:
                     user.contacts.append(contact_obj)
-            db.commit()
     db.commit()
     db.refresh(user)
-    print(user)
+    logger.info(f"User updated: {user}")
     return user
 
 # update client app
@@ -317,7 +307,6 @@ async def paginate(
     total = len(data)
     paginated_items = data[offset:offset + size]
     paginated_items = [schema.model_validate(item) for item in paginated_items]
-    
     return schemas.ListResponse(**{
         "total": total,
         "page": page,
