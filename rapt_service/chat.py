@@ -141,4 +141,44 @@ async def delete_group(
         raise HTTPException(status_code=500,detail={"message":"Something happened while trying to delete the resource"})
     return None
 
-# create chat or use websocket to send chat
+# read chats
+@router.get("/rooms/{room_id}/chats",response_model=list[schemas.ChatInDBBase],tags=["Chat"])
+async def get_chats(
+                        room_id: UUID4,
+                        user: models.User = Depends(authorize(perm="view_chats")),
+                        db: models.Session = Depends(get_db)
+                    ) -> List[schemas.ChatInDBBase]:
+    chatroom: models.ChatRoom = await crud.get_obj_or_404(db,models.ChatRoom,room_id)
+    if not chatroom.is_member(user):
+        return HTTPException(status_code=403,detail={"message":"User not authorized to view this resource"})
+    return chatroom.room_chats
+
+# get single chat
+@router.get("/rooms/{room_id}/chats/{chat_id}",response_model=schemas.ChatInDBBase,tags=["Chat"])
+async def get_chat(
+                        room_id: UUID4,
+                        chat_id: UUID4,
+                        user: models.User = Depends(authorize(perm="view_chats")),
+                        db: models.Session = Depends(get_db)
+                    ) -> schemas.ChatInDBBase:
+    chatroom: models.ChatRoom = await crud.get_obj_or_404(db,models.ChatRoom,room_id)
+    if not chatroom.is_member(user):
+        return HTTPException(status_code=403,detail={"message":"User not authorized to view this resource"})
+    chat = await crud.get_obj_or_404(db,models.Chat,chat_id)
+    return chat
+
+# delete chat
+@router.delete("/rooms/{room_id}/chats/{chat_id}",status_code=204,tags=["Chat"])
+async def delete_chat(
+                        room_id: UUID4,
+                        chat_id: UUID4,
+                        user: models.User = Depends(authorize(perm="delete_chats")),
+                        db: models.Session = Depends(get_db)
+                    ):
+    chatroom: models.ChatRoom = await crud.get_obj_or_404(db,models.ChatRoom,room_id)
+    if not chatroom.is_member(user):
+        return HTTPException(status_code=403,detail={"message":"User not authorized to view this resource"})
+    is_deleted = await crud.delete_obj(db,models.Chat,chat_id)
+    if not is_deleted:
+        raise HTTPException(status_code=500,detail={"message":"Something happened while trying to delete the resource"})
+    return None
