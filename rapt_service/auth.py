@@ -78,13 +78,13 @@ async def refresh_token(access_token: Annotated[str,Form()], db: Session = Depen
         })
        
 @router.get("/me",status_code=200,tags=["Profile"])
-async def me(user: models.User = Depends(authorize(perm="view_users"))) -> schemas.UserInDBBase:
+async def me(user: models.User = Depends(authorize(perm="read_users"))) -> schemas.UserInDBBase:
     return user
 
 @router.get("/permissions/", status_code=200, tags=["Authorize"])
 async def get_permissions(
                             params: Dict[str, Any] = Depends(get_query_params),
-                            user: models.User = Depends(authorize(perm="view_permissions")),
+                            user: models.User = Depends(authorize(perm="read_permissions")),
                             db: Session = Depends(get_db),
                         ) -> schemas.ListResponse:
     return await crud.paginate(
@@ -97,7 +97,7 @@ async def get_permissions(
 @router.get("/permissions/{permission_id}", status_code=200, tags=["Authorize"])
 async def get_permission(
                             permission_id: UUID4,
-                            user: models.User = Depends(authorize(perm="view_permissions")),
+                            user: models.User = Depends(authorize(perm="read_permissions")),
                             db: Session = Depends(get_db)
                         ) -> schemas.PermissionInDBBase:
     return await crud.get_obj_or_404(db=db,model=models.Permission,id=permission_id)
@@ -122,7 +122,7 @@ async def create_role(
 @router.get("/roles/", status_code=200, tags=["Authorize"])
 async def get_roles(
                         params: Dict[str, Any] = Depends(get_query_params),
-                        user: models.User = Depends(authorize(perm="view_roles")),
+                        user: models.User = Depends(authorize(perm="read_roles")),
                         db: Session = Depends(get_db)
                     ) -> schemas.ListResponse:
     return await crud.paginate(
@@ -136,7 +136,7 @@ async def get_roles(
 @router.get("/roles/{role_id}", status_code=200, tags=["Authorize"])
 async def get_role(
                         role_id: UUID4,
-                        user: models.User = Depends(authorize(perm="view_roles")),
+                        user: models.User = Depends(authorize(perm="read_roles")),
                         db: Session = Depends(get_db)
                     ) -> schemas.RoleInDBBase:
     return await crud.get_obj_or_404(db=db,model=models.Role,id=role_id)
@@ -197,7 +197,7 @@ async def create_user(
 @router.get("/users/", status_code=200, tags=["Users"])
 async def get_users(
                         params: Dict[str, Any] = Depends(get_query_params),
-                        user: models.User = Depends(authorize(perm="view_users")),
+                        user: models.User = Depends(authorize(perm="read_users")),
                         db: Session = Depends(get_db)
                     ) -> schemas.ListResponse:
     return await crud.paginate(
@@ -211,7 +211,7 @@ async def get_users(
 @router.get("/users/{user_id}", status_code=200, tags=["Users"])
 async def get_user(
                         user_id: UUID4,
-                        user: models.User = Depends(authorize(perm="view_users")),
+                        user: models.User = Depends(authorize(perm="read_users")),
                         db: Session = Depends(get_db)
                     ) -> schemas.UserInDBBase:
     return await crud.get_obj_or_404(db=db,model=models.User,id=user_id)
@@ -269,7 +269,7 @@ async def create_client_app(
 @router.get("/apps/", status_code=200, tags=["Apps"])
 async def get_client_apps(
                             params: Dict[str, Any] = Depends(get_query_params),
-                            user: models.User = Depends(authorize(perm="view_client_apps")),
+                            user: models.User = Depends(authorize(perm="read_client_apps")),
                             db: Session = Depends(get_db)
                         ) -> schemas.ListResponse:
     return await crud.paginate(
@@ -283,7 +283,7 @@ async def get_client_apps(
 @router.get("/apps/{app_id}", status_code=200, tags=["Apps"])
 async def get_client_app(
                             app_id: UUID4,
-                            user: models.User = Depends(authorize(perm="view_client_apps")),
+                            user: models.User = Depends(authorize(perm="read_client_apps")),
                             db: Session = Depends(get_db)
                         ) -> schemas.ClientAppInDBBase:
     return await crud.get_obj_or_404(db=db,model=models.ClientApp,id=app_id)

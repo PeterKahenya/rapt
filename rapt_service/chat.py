@@ -30,12 +30,12 @@ async def create_room(
     return chatroom
 
 
-# TODO: we should add admin permission to 'view_all_chatrooms' otherwise we should only return chatrooms where the user is a member
+# TODO: we should add admin permission to 'read_all_chatrooms' otherwise we should only return chatrooms where the user is a member
 
 # get all chatrooms where the user is a member
 @router.get("/rooms",response_model=list[schemas.ChatRoomInDBBase],tags=["Chat"])
 async def get_rooms(
-                        user: models.User = Depends(authorize(perm="view_chatrooms")),
+                        user: models.User = Depends(authorize(perm="read_chatrooms")),
                         db: models.Session = Depends(get_db)
                     ) -> List[schemas.ChatRoomInDBBase]:
     print(user.chatrooms)
@@ -45,7 +45,7 @@ async def get_rooms(
 @router.get("/rooms/{room_id}",response_model=schemas.ChatRoomInDBBase,tags=["Chat"])
 async def get_room(
                         room_id: UUID4,
-                        user: models.User = Depends(authorize(perm="view_chatrooms")),
+                        user: models.User = Depends(authorize(perm="read_chatrooms")),
                         db: models.Session = Depends(get_db)
                     ) -> schemas.ChatRoomInDBBase:
     chatroom = await crud.get_obj_or_404(db,models.ChatRoom,room_id)
@@ -95,7 +95,7 @@ async def create_group(
 
 @router.get("/groups",response_model=list[schemas.GroupInDBBase],tags=["Chat"])
 async def get_groups(
-                        user: models.User = Depends(authorize(perm="view_groups")),
+                        user: models.User = Depends(authorize(perm="read_groups")),
                         db: models.Session = Depends(get_db)
                     ) -> List[schemas.GroupInDBBase]:
     # get groups where the user is a member
@@ -107,7 +107,7 @@ async def get_groups(
 @router.get("/groups/{group_id}",response_model=schemas.GroupInDBBase,tags=["Chat"])
 async def get_group(
                         group_id: UUID4,
-                        user: models.User = Depends(authorize(perm="view_groups")),
+                        user: models.User = Depends(authorize(perm="read_groups")),
                         db: models.Session = Depends(get_db)
                     ) -> schemas.GroupInDBBase:
     group = await crud.get_obj_or_404(db,models.Group,group_id)
@@ -145,7 +145,7 @@ async def delete_group(
 @router.get("/rooms/{room_id}/chats",response_model=list[schemas.ChatInDBBase],tags=["Chat"])
 async def get_chats(
                         room_id: UUID4,
-                        user: models.User = Depends(authorize(perm="view_chats")),
+                        user: models.User = Depends(authorize(perm="read_chats")),
                         db: models.Session = Depends(get_db)
                     ) -> List[schemas.ChatInDBBase]:
     chatroom: models.ChatRoom = await crud.get_obj_or_404(db,models.ChatRoom,room_id)
@@ -158,7 +158,7 @@ async def get_chats(
 async def get_chat(
                         room_id: UUID4,
                         chat_id: UUID4,
-                        user: models.User = Depends(authorize(perm="view_chats")),
+                        user: models.User = Depends(authorize(perm="read_chats")),
                         db: models.Session = Depends(get_db)
                     ) -> schemas.ChatInDBBase:
     chatroom: models.ChatRoom = await crud.get_obj_or_404(db,models.ChatRoom,room_id)

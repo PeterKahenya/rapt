@@ -29,7 +29,7 @@ def test_content_type_model(db):
 # test permission model
 def test_permission_model(db):
     user_content_type = db.execute(select(models.ContentType).where(models.ContentType.content == "users1")).scalars().first()
-    permission = models.Permission(name="Can View Users1",codename="view_users1",content_type=user_content_type)
+    permission = models.Permission(name="Can View Users1",codename="read_users1",content_type=user_content_type)
     db.add(permission)
     db.commit()
     assert permission in db

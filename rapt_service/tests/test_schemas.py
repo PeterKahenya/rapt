@@ -33,9 +33,9 @@ def test_contenttype_schema(db):
 # test permission schemas
 def test_permission_schema(db):
     content_type = db.execute(select(models.ContentType)).scalars().first()
-    permission = schemas.PermissionCreate(**{"name": "Can View Users","codename": "view_users","content_type_id": str(content_type.id)})
+    permission = schemas.PermissionCreate(**{"name": "Can View Users","codename": "read_users","content_type_id": str(content_type.id)})
     assert permission.name == "Can View Users"
-    assert permission.codename == "view_users"
+    assert permission.codename == "read_users"
     assert permission.content_type_id == content_type.id
     permission_update = schemas.PermissionUpdate(**{"name": "Can View Users1"})
     assert permission_update.name == "Can View Users1"
