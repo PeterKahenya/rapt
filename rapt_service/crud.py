@@ -64,7 +64,7 @@ async def filter_objects(db: Session, model: models.Model, params: dict = {}, so
             'in': lambda col, val: col.in_(val),
         }
         query = select(model)
-        print(f"All Results: {[u.to_dict() for u in db.scalars(query).all()]}")
+        # print(f"All Results: {[u.to_dict() for u in db.scalars(query).all()]}")
         for key, value in params.items():
             if '__' in key:
                 column_name, condition = key.split('__', 1)
