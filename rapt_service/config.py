@@ -24,6 +24,9 @@ class AppSettings(BaseSettings):
     smsleopard_base_url: str
     smsleopard_api_key: str
     smsleopard_api_secret: str
+    mailtrap_api_token: str
+    superuser_phone: str
+    
     
 
 settings = AppSettings()

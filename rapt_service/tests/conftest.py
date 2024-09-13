@@ -9,7 +9,9 @@ from depends import get_db
 from fastapi.testclient import TestClient
 from init import initialize_db
 
-
+SessionLocal = None
+engine = None
+faker = Faker()
 
 class Settings(BaseSettings):
     mysql_driver: str = "mysql+pymysql"
@@ -23,14 +25,10 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "iufidfufidsfudfisudfsudfiudfidufd8f9df89f8d98fdf98"
     jwt_algorithm: str = "HS256"
     access_token_expiry_minutes: int = 60
+    superuser_phone: str = faker.unique.phone_number()[0:11]
 
 settings = Settings()
 TEST_DATABASE_URL = f"{settings.mysql_driver}://{settings.test_database_user}:{settings.test_database_password}@{settings.test_database_host}:{settings.test_database_port}"
-
-SessionLocal = None
-engine = None
-faker = Faker()
-
 
 # seed database with faker data for all models
 def seed_db(db):
@@ -53,7 +51,7 @@ def seed_db(db):
     db.commit()
     # faker add users
     for i in range(10):
-        user = models.User(phone=faker.unique.phone_number()[0:11],name=faker.name(),roles=db.execute(select(models.Role)).scalars().all()[0:5])
+        user = models.User(phone=f"254 {faker.unique.phone_number()[0:8]}",name=faker.name(),roles=db.execute(select(models.Role)).scalars().all()[0:5])
         db.add(user)
     db.commit()
     # faker add contacts
@@ -106,7 +104,7 @@ def db():
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = SessionLocal(bind=engine)
     seed_db(session)
-    initialize_db(session)
+    initialize_db(session, settings, is_test=True)
     yield session
     session.rollback()
     session.close()
