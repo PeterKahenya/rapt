@@ -155,7 +155,7 @@ async def update_role(
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise HTTPException(status_code=500,detail={
-            "message":"An unexpected error occurred"
+            "message":f"An unexpected error: {e} occurred"
         })
         
 # delete role
@@ -174,7 +174,7 @@ async def delete_role(
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise HTTPException(status_code=500,detail={
-            "message":"An unexpected error occurred"
+            "message":f"An unexpected error {e} occurred"
         })
         
 # create user
@@ -225,13 +225,12 @@ async def update_user(
                         db: Session = Depends(get_db)
                     ) -> schemas.UserInDBBase:
     try:
-        print(user_update)
         user_db: models.User = await crud.update_user(db=db,user_id=user_id,user_update_data=user_update)
         return user_db
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise HTTPException(status_code=500,detail={
-            "message":"An unexpected error occurred"
+            "message":f"An unexpected error occurred: {e}"
         })
 
 # delete user
@@ -241,16 +240,13 @@ async def delete_user(
                         user: models.User = Depends(authorize(perm="delete_users")),
                         db: Session = Depends(get_db)
                     ) -> None:
-    try:
-        is_deleted = await crud.delete_obj(db=db,model=models.User,id=user_id)
-        if is_deleted:
-            return None
-        else:
-            return {"message":"Something went wrong"},500
-    except Exception as e:
-        logger.error(f"Error in delete_user: {str(e)}")
+    is_deleted = await crud.delete_obj(db=db,model=models.User,id=user_id)
+    if is_deleted:
+        return None
+    else:
+        logger.error(f"Unable to delete user")
         raise HTTPException(status_code=500,detail={
-            "message":"An unexpected error occurred"
+            "message":"Something went wrong"
         })
 
 # create client app
