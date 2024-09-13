@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 import pytest
 from sqlalchemy import select,exc
 import crud
@@ -14,7 +15,7 @@ async def test_get_obj_or_404(db):
     content_type_db = await crud.get_obj_or_404(db, models.ContentType, content_type_db.id)
     assert content_type_db is not None
     assert content_type_db in db
-    with pytest.raises(exc.NoResultFound) as e:
+    with pytest.raises(HTTPException) as e:
         await crud.get_obj_or_404(db, models.ContentType, uuid.uuid4())
 
 # test get_obj_or_None
@@ -65,7 +66,7 @@ async def test_content_type_crud(db):
     # read single contenttype
     content_type_db1 = await crud.get_obj_or_None(db, models.ContentType, content_type_db.id)
     assert content_type_db1 == content_type_db
-    with pytest.raises(exc.NoResultFound) as e:
+    with pytest.raises(HTTPException) as e:
         await crud.get_obj_or_404(db, models.ContentType, uuid.uuid4())
     # read all contenttypes
     content_types = await crud.filter_objects(db, models.ContentType, {})
@@ -96,7 +97,7 @@ async def test_permission_crud(db):
     # read single permission
     permission_db1 = await crud.get_obj_or_None(db, models.Permission, permission_db.id)
     assert permission_db1 == permission_db
-    with pytest.raises(exc.NoResultFound) as e:
+    with pytest.raises(HTTPException) as e:
         await crud.get_obj_or_404(db, models.Permission, uuid.uuid4())
     # read all permissions
     permissions = await crud.filter_objects(db, models.Permission, {})
@@ -125,7 +126,7 @@ async def test_role_crud(db):
     # read single role
     role_db1 = await crud.get_obj_or_None(db, models.Role, role_db.id)
     assert role_db1 == role_db
-    with pytest.raises(exc.NoResultFound) as e:
+    with pytest.raises(HTTPException) as e:
         await crud.get_obj_or_404(db, models.Role, uuid.uuid4())
     # read all roles
     roles = await crud.filter_objects(db, models.Role, {})
@@ -162,7 +163,7 @@ async def test_user_crud(db):
     # read single user
     user_db1 = await crud.get_obj_or_None(db, models.User, user_db.id)
     assert user_db1 == user_db
-    with pytest.raises(exc.NoResultFound) as e:
+    with pytest.raises(HTTPException) as e:
         await crud.get_obj_or_404(db, models.User, uuid.uuid4())
     # read all users
     users = await crud.filter_objects(db, models.User, {})
@@ -207,7 +208,7 @@ async def test_clientapp_crud(db):
     # read single clientapp
     clientapp_db1 = await crud.get_obj_or_None(db, models.ClientApp, clientapp_db.id)
     assert clientapp_db1 == clientapp_db
-    with pytest.raises(exc.NoResultFound) as e:
+    with pytest.raises(HTTPException) as e:
         await crud.get_obj_or_404(db, models.ClientApp, uuid.uuid4())
     # read all clientapps
     clientapps = await crud.filter_objects(db, models.ClientApp, {})
@@ -241,7 +242,7 @@ async def test_chatroom_crud(db):
     # read single chatroom
     chatroom_db1 = await crud.get_obj_or_None(db, models.ChatRoom, chatroom_db.id)
     assert chatroom_db1 == chatroom_db
-    with pytest.raises(exc.NoResultFound) as e:
+    with pytest.raises(HTTPException) as e:
         await crud.get_obj_or_404(db, models.ChatRoom, uuid.uuid4())
     # read all chatrooms
     chatrooms = await crud.filter_objects(db, models.ChatRoom, {})
@@ -280,7 +281,7 @@ async def test_chatgroup_crud(db):
     # read single chatgroup
     chatgroup_db1 = await crud.get_obj_or_None(db, models.Group, chatgroup_db.id)
     assert chatgroup_db1 == chatgroup_db
-    with pytest.raises(exc.NoResultFound) as e:
+    with pytest.raises(HTTPException) as e:
         await crud.get_obj_or_404(db, models.Group, uuid.uuid4())
     # read all chatgroups
     chatgroups = await crud.filter_objects(db, models.Group, {})
@@ -318,7 +319,7 @@ async def test_chatmessage_crud(db):
     # read single chatmessage
     chat_db1 = await crud.get_obj_or_None(db, models.Chat, chat_db.id)
     assert chat_db1 == chat_db
-    with pytest.raises(exc.NoResultFound) as e:
+    with pytest.raises(HTTPException) as e:
         await crud.get_obj_or_404(db, models.Chat, uuid.uuid4())
     # read all chatmessages
     chatmessages = await crud.filter_objects(db, models.Chat, {})
@@ -352,7 +353,7 @@ async def test_media_crud(db):
     # read single media
     media_db1 = await crud.get_obj_or_None(db, models.Media, media_db.id)
     assert media_db1 == media_db
-    with pytest.raises(exc.NoResultFound) as e:
+    with pytest.raises(HTTPException) as e:
         await crud.get_obj_or_404(db, models.Media, uuid.uuid4())
     # read all media
     medias = await crud.filter_objects(db, models.Media, {})
