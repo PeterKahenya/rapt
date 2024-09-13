@@ -2,14 +2,23 @@ from typing import Annotated, Any, Dict, Optional
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
 from config import DATABASE_URL,logger
-from fastapi import Depends, Form, HTTPException, Query, Request
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, Form, HTTPException, Query, Request, WebSocket, status
+from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer, HTTPBearer
 from config import settings
 import crud
 import models
 import schemas
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+class RaptOAuth2PasswordBearer(OAuth2PasswordBearer):
+    async def __call__(self, request: Request=None, websocket: WebSocket=None) -> Optional[HTTPAuthorizationCredentials]:
+        request = request or websocket
+        if not request:
+            if self.auto_error:
+                raise HTTPException(status_code= status.HTTP_403_FORBIDDEN,detail="Not authenticated")
+            return None
+        return await super().__call__(request)
+
+oauth2_scheme = RaptOAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 def get_db():
     try:
@@ -24,8 +33,8 @@ def get_db():
         
 async def get_app(client_id: Annotated[str, Form()], client_secret: Annotated[str, Form()], db: Session = Depends(get_db)) -> models.ClientApp:
     clientapp = db.execute(select(models.ClientApp)
-                           .where(models.ClientApp.client_id==client_id, 
-                                  models.ClientApp.client_secret==client_secret)).scalars().first()
+                           .where(models.ClientApp.client_id==client_id, models.ClientApp.client_secret==client_secret)
+                        ).scalars().first()
     if not clientapp:
         raise HTTPException(status_code=401,detail={"message":"Client credentials are invalid"})
     return clientapp
