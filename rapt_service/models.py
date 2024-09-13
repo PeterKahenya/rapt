@@ -255,6 +255,10 @@ class ChatRoom(Model):
             raise ValueError("Members must be unique")
         self.socket_room_id = socket_room_id
         self.members = members
+    
+    # check if a user is a member of the chatroom
+    def is_member(self,user:User) -> bool:
+        return user in self.members
 
 
 class Group(Model):
