@@ -32,6 +32,8 @@ env:
     SMSLEOPARD_BASE_URL: ${{ secrets.SMSLEOPARD_BASE_URL }}
     SMSLEOPARD_API_KEY: ${{ secrets.SMSLEOPARD_API_KEY }}
     SMSLEOPARD_API_SECRET: ${{ secrets.SMSLEOPARD_API_SECRET }}
+    MAILTRAP_API_TOKEN: ${{ secrets.MAILTRAP_API_TOKEN }}
+    SUPERUSER_PHONE: ${{ secrets.SUPERUSER_PHONE }}
 
 jobs:
     test:
@@ -155,6 +157,8 @@ jobs:
                   SMSLEOPARD_BASE_URL=${{ env.SMSLEOPARD_BASE_URL }}
                   SMSLEOPARD_API_KEY=${{ env.SMSLEOPARD_API_KEY }}
                   SMSLEOPARD_API_SECRET=${{ env.SMSLEOPARD_API_SECRET }}
+                  MAILTRAP_API_TOKEN=${{ env.MAILTRAP_API_TOKEN }}
+                  SUPERUSER_PHONE=${{ env.SUPERUSER_PHONE }}
                   EOF
 
                   kubectl delete secrets rapt-prod-env-secrets || true
