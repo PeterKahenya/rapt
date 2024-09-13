@@ -1,3 +1,4 @@
+from typing import Tuple
 import uuid
 import random
 import base64
@@ -42,5 +43,36 @@ async def smsleopard_send_sms(phone: str, message: str) -> bool:
             return True
         else:
             raise Exception(f"{response.status_code} - {response.text}")
+    except Exception as e:
+        raise e
+    
+def mailtrap_send_email(to: Tuple[str,str], subject: str, message: str) -> bool:
+    try:
+        to_email, to_name = to
+        url = "https://send.api.mailtrap.io/api/send"
+        payload = {
+            "to": [
+                {
+                    "email": to_email,
+                    "name": to_name
+                }
+            ],
+            "from": {
+                "email": "hi@demomailtrap.com",
+                "name": "Deployment Bot"
+            },
+            "subject": subject,
+            "text": message,
+            "category": "RaptChat"
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Api-Token": settings.mailtrap_api_token
+        }
+
+        response = requests.post(url, json=payload, headers=headers)
+
+        print(response.json())
     except Exception as e:
         raise e
