@@ -113,7 +113,7 @@ async def update_permission(db: Session, permission_id: UUID4, permission_update
     logger.info(f"Updating Permission with id: {permission_id}")
     permission = await get_obj_or_404(db, models.Permission, permission_id)
     update_data = permission_update.model_dump(exclude_unset=True)
-    db.execute(update(models.Permission).where(models.Permission.id == permission_id).values(**update_data.model_dump()))
+    db.execute(update(models.Permission).where(models.Permission.id == permission_id).values(**update_data))
     db.commit()
     db.refresh(permission)
     return permission
