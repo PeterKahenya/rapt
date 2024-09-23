@@ -1,4 +1,4 @@
-package rapt.chat.raptandroid.ui.theme
+package rapt.chat.raptandroid.presentation.ui
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

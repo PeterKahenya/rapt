@@ -1,4 +1,4 @@
-package rapt.chat.raptandroid.ui.theme
+package rapt.chat.raptandroid.presentation.ui
 
 import androidx.compose.ui.graphics.Color
 
