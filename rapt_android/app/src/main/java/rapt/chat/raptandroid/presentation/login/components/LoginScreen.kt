@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +35,7 @@ fun LoginScreen(
 ) {
     val loginState by loginViewModel.state.collectAsStateWithLifecycle()
     val phone: MutableState<String> = remember { mutableStateOf("") }
+    val code: MutableState<String> = remember { mutableStateOf("") }
     Column(
         horizontalAlignment = Alignment.Start,
         modifier = Modifier
@@ -66,6 +68,27 @@ fun LoginScreen(
             modifier = Modifier.testTag("loginPhoneField")
                 .fillMaxWidth()
         )
+
+        if (!loginState.error.isNullOrEmpty()) {
+            Text(text = loginState.error?: "An unexpected error occurred")
+        }
+        if (loginState.isLoading) {
+            Text(text = "Loading...")
+        }
+        if (loginState.loginResponse != null) {
+            LocalContext
+            Text(text = "SMS sent")
+            TextField(
+                value = code.value,
+                onValueChange = {
+                    code.value = it
+                },
+                label = { Text(text = "e.g. T9GTA8") },
+                modifier = Modifier.testTag("loginOTPField")
+                    .fillMaxWidth()
+                    .padding(top = 20.dp)
+            )
+        }
         Button(
             onClick = { loginViewModel.login(phone.value) },
             modifier = Modifier.testTag("loginNextButton")
@@ -74,15 +97,6 @@ fun LoginScreen(
                 .width(150.dp)
         ) {
             Text(text = "Next")
-        }
-        if (!loginState.error.isNullOrEmpty()) {
-            Text(text = loginState.error?: "An unexpected error occurred")
-        }
-        if (loginState.isLoading) {
-            Text(text = "Loading...")
-        }
-        if (loginState.loginResponse != null) {
-            Text(text = "SMS sent")
         }
     }
 }

@@ -75,6 +75,7 @@ class Role(Model):
 contacts_association = Table(
     'contacts',
     Model.metadata,
+    Column('name', String(50), nullable=True),
     Column('user_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True),
     Column('contact_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True)
 )
@@ -87,12 +88,11 @@ chatroom_members_association = Table(
     Column('chatroom_id', Uuid, ForeignKey('chatrooms.id',ondelete="CASCADE"),primary_key=True)
 )
 
-
 class User(Model):
     __tablename__ = "users"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True,unique=True,default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(50))
-    phone: Mapped[str] = mapped_column(String(12),unique=True)
+    phone: Mapped[str] = mapped_column(String(15),unique=True)
     phone_verification_code: Mapped[Optional[str]] = mapped_column(String(6))
     phone_verification_code_expiry_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime())
     device_fcm_token: Mapped[Optional[str]] = mapped_column(String(500))
