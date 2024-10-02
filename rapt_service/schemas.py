@@ -71,6 +71,12 @@ class UserCreate(BaseModel):
 class Contact(ModelBase):
     phone: str
     name: str
+    is_active: Optional[bool] = False
+    id: Optional[UUID4] = None
+    
+class ContactUpload(ModelBase):
+    phone: str
+    name: str
     id: Optional[UUID4] = None
 
 class UserUpdate(BaseModel):
@@ -83,7 +89,7 @@ class UserUpdate(BaseModel):
     phone_verification_code: Optional[str] = None
     phone_verification_code_expiry_at: Optional[datetime] = None
     last_seen: Optional[datetime] = None
-    contacts: Optional[List[Contact]] = []
+    contacts: Optional[List[ContactUpload]] = []
     roles: Optional[List[ModelBase]] = []
     
 class UserInDBBase(ModelInDBBase):
