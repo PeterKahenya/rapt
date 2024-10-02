@@ -27,11 +27,16 @@ class RaptDataStoreImpl(val context: Context): RaptDataStore {
     }
 
     override suspend fun getAuth(): Auth? {
-        val accessToken: Flow<Auth?> = context.dataStore.data.map { preferences ->
-            println("getAuth: $preferences")
-            preferences[accessTokenKey]?.let { preferences[phoneKey]?.let { it1 -> Auth(it, it1) } }
+        try {
+            val accessToken: Flow<Auth?> = context.dataStore.data.map { preferences ->
+                println("getAuth: $preferences")
+                preferences[accessTokenKey]?.let { preferences[phoneKey]?.let { it1 -> Auth(it, it1) } }
+            }
+            return accessToken.first()
+        } catch (e: NoSuchElementException){
+            println("getAuth Error: $e")
+            return null
         }
-        return accessToken.first()
     }
 
 }

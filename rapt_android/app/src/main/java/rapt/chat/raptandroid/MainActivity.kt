@@ -6,9 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import rapt.chat.raptandroid.presentation.login.LoginViewModel
-import rapt.chat.raptandroid.presentation.login.components.LoginScreen
 import rapt.chat.raptandroid.presentation.ui.RaptTheme
+import rapt.chat.raptandroid.presentation.welcome.WelcomeScreen
+import rapt.chat.raptandroid.presentation.welcome.WelcomeViewModel
 
 
 @AndroidEntryPoint
@@ -18,8 +18,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             RaptTheme {
-                val viewModel = hiltViewModel<LoginViewModel>()
-                LoginScreen(viewModel)
+                val viewModel = hiltViewModel<WelcomeViewModel>()
+                WelcomeScreen(viewModel)
             }
         }
     }

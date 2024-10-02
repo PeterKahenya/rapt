@@ -38,7 +38,14 @@ data class ProfileResponse(
     val updatedAt: String
 )
 
+data class UserProfile(
+    val name: String,
+    val phone: String,
+    val userId: String
+)
+
 fun ProfileResponse.toUserProfile() = UserProfile(
     name = name,
-    phone = phone
+    phone = phone,
+    userId = id
 )

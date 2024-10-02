@@ -16,10 +16,10 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import rapt.chat.raptandroid.domain.repository.AuthRepository
+import rapt.chat.raptandroid.data.repository.AuthRepository
 import javax.inject.Inject
 import kotlinx.serialization.json.Json
-import rapt.chat.raptandroid.domain.repository.Message
+import rapt.chat.raptandroid.data.repository.Message
 
 class RaptSocketClient @Inject constructor(
     private val authRepository: AuthRepository
@@ -29,8 +29,8 @@ class RaptSocketClient @Inject constructor(
     }
     private var socket: WebSocketSession? = null
 
-    private val _messages = MutableSharedFlow<Message>()
-    val messages: SharedFlow<Message> = _messages.asSharedFlow()
+//    private val _messages = MutableSharedFlow<Message>()
+//    val messages: SharedFlow<Message> = _messages.asSharedFlow()
 
     suspend fun connect(serverUrl: String): WebSocketSession {
         try {
@@ -49,16 +49,18 @@ class RaptSocketClient @Inject constructor(
         }
     }
 
-    fun startListening() = CoroutineScope(Dispatchers.IO).launch {
+    fun startListening(messagesFlow: MutableSharedFlow<Message>) = CoroutineScope(Dispatchers.IO).launch {
         try {
             socket?.let { socket ->
                 for (frame in socket.incoming) {
                     frame as? Frame.Text ?: continue
                     val receivedText = frame.readText()
                     println("ChatClient Received message: $receivedText")
+                    Log.i("ChatClient", "Message: $receivedText")
                     val json = Json { ignoreUnknownKeys = true }
                     val chatMessage = json.decodeFromString<Message>(receivedText)
-                    _messages.emit(chatMessage)
+                    println("ChatClient Message: $chatMessage")
+                    messagesFlow.emit(chatMessage)
                 }
             }
         } catch (e: Exception) {

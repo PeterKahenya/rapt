@@ -1,23 +1,10 @@
-package rapt.chat.raptandroid.data.source.api
+package rapt.chat.raptandroid.data.source
 
-import rapt.chat.raptandroid.data.model.ChatRoom
-import rapt.chat.raptandroid.data.model.ChatRoomCreateRequest
-import rapt.chat.raptandroid.data.model.LoginResponse
-import rapt.chat.raptandroid.data.model.ProfileResponse
-import rapt.chat.raptandroid.data.model.ProfileUpdateRequest
-import rapt.chat.raptandroid.data.model.RefreshResponse
-import rapt.chat.raptandroid.data.model.VerifyResponse
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.Field
-import retrofit2.http.FormUrlEncoded
-import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Path
+import rapt.chat.raptandroid.data.model.*
+import retrofit2.http.*
 
 interface RaptApi {
+
     @FormUrlEncoded
     @POST("auth/login")
     suspend fun login(
@@ -48,7 +35,9 @@ interface RaptApi {
 
     // get profile
     @GET("auth/me")
-    suspend fun getProfile(@Header("Authorization") accessToken: String): ProfileResponse
+    suspend fun getProfile(
+        @Header("Authorization") accessToken: String
+    ): ProfileResponse
 
     //update profile
     @PUT("auth/users/{userId}")

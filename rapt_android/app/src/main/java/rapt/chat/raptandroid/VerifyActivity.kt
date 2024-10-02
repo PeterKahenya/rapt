@@ -4,44 +4,26 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import rapt.chat.raptandroid.ui.theme.RaptTheme
+import androidx.hilt.navigation.compose.hiltViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import rapt.chat.raptandroid.presentation.verify.VerifyViewModel
+import rapt.chat.raptandroid.presentation.verify.VerifyScreen
+import rapt.chat.raptandroid.presentation.ui.RaptTheme
 
+@AndroidEntryPoint
 class VerifyActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val phone = intent.getStringExtra("phone")
+        println("VerifyActivity Phone Number: $phone")
         setContent {
             RaptTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting2(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val viewModel = hiltViewModel<VerifyViewModel>()
+                if (phone != null) {
+                    VerifyScreen(viewModel, phone)
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting2(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview2() {
-    RaptTheme {
-        Greeting2("Android")
     }
 }

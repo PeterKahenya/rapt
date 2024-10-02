@@ -1,0 +1,217 @@
+{
+  "type": "online",
+  "user": {
+    "id": "b60be459-fb2b-422c-9beb-c49df880a176",
+    "created_at": "2024-09-13T09:25:01",
+    "updated_at": "2024-10-01T20:19:55",
+    "phone": "254102227267",
+    "name": "Administrator12",
+    "is_superuser": true,
+    "is_active": true,
+    "is_verified": true,
+    "phone_verification_code": null,
+    "phone_verification_code_expiry_at": null,
+    "last_seen": "2024-10-01T20:19:55",
+    "contacts": [
+      {
+        "id": "00922532-6807-4da3-97f3-a376dc844baa",
+        "phone": "0729330505",
+        "name": "Sheilla KRA"
+      },
+      {
+        "id": "02e00107-3859-46e2-8248-4d71f9476966",
+        "phone": "710",
+        "name": "Customer Care"
+      },
+      {
+        "id": "04cb8f21-8e5c-4260-a397-d6f69bff9a8d",
+        "phone": "0780930008",
+        "name": "Aunt Mary Airtel"
+      },
+      {
+        "id": "064f4c77-2090-450d-8e63-3fd1783b3687",
+        "phone": "0700353305",
+        "name": "Lafila Gas"
+      },
+      {
+        "id": "07eeade5-fde9-470d-8f89-d3d9002f93a5",
+        "phone": "+254722348639",
+        "name": "John Kimani (Uncle)"
+      },
+      {
+        "id": "0a725184-fdea-4ff9-9541-85802ed868af",
+        "phone": "+254796362367",
+        "name": "James Chepkuony"
+      },
+      {
+        "id": "0ecf025a-1913-4cd0-a163-5000eab60b91",
+        "phone": "*124#",
+        "name": "Orange Data"
+      },
+      {
+        "id": "114ef64e-351a-40be-8831-5bd90ba72d5e",
+        "phone": "0720527142",
+        "name": "Alfric Alima (Bollorè)"
+      },
+      {
+        "id": "11fb7567-2b05-4c1c-96a4-93c740f0f1b7",
+        "phone": "+254710409472",
+        "name": "Unity West - Electrician"
+      },
+      {
+        "id": "1422c3ab-98b7-47eb-b743-c4eab2c1de35",
+        "phone": "254790373516",
+        "name": "Anonymous"
+      },
+      {
+        "id": "1587e976-6091-407f-9062-e416a54aa544",
+        "phone": "0710409472",
+        "name": "Mato"
+      },
+      {
+        "id": "16224291-6331-4cb2-8409-3d61ee277939",
+        "phone": "+254110701819",
+        "name": "Unity Gate Security"
+      },
+      {
+        "id": "1841c380-171a-424a-8790-f9f3e348915c",
+        "phone": "+254720511511",
+        "name": "Amani"
+      },
+      {
+        "id": "18846ac2-d706-40a3-8531-1392759a5f13",
+        "phone": "+254728470645",
+        "name": "Edwin Kiplagat"
+      },
+      {
+        "id": "19d94272-319e-424b-bd38-c45495ee63bb",
+        "phone": "0724547235",
+        "name": "Mike Thotho (Humentum)"
+      },
+      {
+        "id": "207bfa64-76e5-4b52-b7f1-2400b25083f4",
+        "phone": "+254799492908",
+        "name": "Joseph Khaemba (PwC)"
+      },
+      {
+        "id": "208bdce1-88e5-4aa3-803e-48472b1d9255",
+        "phone": "0712465985",
+        "name": "Emily Wayua (PwC)"
+      },
+      {
+        "id": "2ae163ae-9bc6-4c34-a3d9-c0749cfe2e2b",
+        "phone": "0723302991",
+        "name": "Mama Flo"
+      },
+      {
+        "id": "2d25dae6-c6b7-4b9a-a89d-c93348da038f",
+        "phone": "+254758044968",
+        "name": "Viviane"
+      },
+      {
+        "id": "2f538d93-8987-4784-b398-396efa0acb5a",
+        "phone": "0771190604",
+        "name": "Me Tel"
+      },
+      {
+        "id": "36d3d8dd-f6dd-4789-a657-2081cedb3f71",
+        "phone": "0722525992",
+        "name": "Billy KRA"
+      },
+      {
+        "id": "393848e5-2115-4c61-86be-b0e32cae9bab",
+        "phone": "+254714151450",
+        "name": "Siz"
+      },
+      {
+        "id": "3a283528-6289-41d5-8fa7-a57eb77a02ed",
+        "phone": "+254722122",
+        "name": "voice mail 1"
+      },
+      {
+        "id": "3b0a50b5-3c61-48ce-aea6-a04c17151c07",
+        "phone": "0714037037",
+        "name": "Ian Kimuhu (Memory)"
+      },
+      {
+        "id": "3d72cbbf-a125-4f1b-8e1b-fd8fe939840a",
+        "phone": "+254792401944",
+        "name": "Teresiah Mùringa"
+      },
+      {
+        "id": "4002e530-60cb-4717-b45c-521280d2a3cd",
+        "phone": "+254723589206",
+        "name": "Daniel Muia (PwC)"
+      },
+      {
+        "id": "482dab9b-25ed-4d0f-8fa5-9fd8834a4617",
+        "phone": "0755186870",
+        "name": "Zuri Digital solutions"
+      },
+      {
+        "id": "4cae51d5-8408-490d-9442-4fbb2d5bdb2f",
+        "phone": "310",
+        "name": "Info-line"
+      },
+      {
+        "id": "4db9d657-10a2-486a-be6d-84e7b876815e",
+        "phone": "0722367016",
+        "name": "Kim Cuzin"
+      },
+      {
+        "id": "4dc7eb68-dd75-4788-8a1f-5a5fcb67e232",
+        "phone": "+254711497237",
+        "name": "Eng Murugami Joe"
+      },
+      {
+        "id": "52bca074-8de1-4b06-be4a-9044a893e22c",
+        "phone": "0710757692",
+        "name": "Moses Maraga(PwC)"
+      },
+      {
+        "id": "532e08f6-0bfd-4fb3-a9eb-b6cd9f7da8fb",
+        "phone": "+254722133133",
+        "name": "voice mail 3"
+      },
+      {
+        "id": "54b8d09d-49d8-41f5-8c4f-1da0af29f424",
+        "phone": "0709698888",
+        "name": "Carlcare Service Hotline"
+      },
+      {
+        "id": "5666439e-a22f-476b-b9e9-2cd44480afce",
+        "phone": "+254702664632",
+        "name": "Edward (Kipya)"
+      },
+      {
+        "id": "585dafea-b43e-4746-8924-a69987c7d913",
+        "phone": "*232#",
+        "name": "Register SIM"
+      },
+      {
+        "id": "60433f2e-639d-4f6e-ab32-769f63b79754",
+        "phone": "+254734613848",
+        "name": "Teresiah Mùringa"
+      },
+      {
+        "id": "61826c9f-a6ab-4edf-8e56-62cd033aa43e",
+        "phone": "+254715223579",
+        "name": "Nancy Fgee Mwangi"
+      },
+      {
+        "id": "65ad5a2b-4838-47fb-89e9-7a416f5a56ea",
+        "phone": "+254713169800",
+        "name": "Sarah"
+      },
+      {
+        "id": "668a6277-eb62-4df5-a756-ed0e1a714dc2",
+        "phone": "111",
+        "name": "Directory Enq"
+      },
+      {
+        "id": "6734cefb-bc65-498b-bdb3-0d4c751cae73",
+        "phone": "222",
+        "name": "Service Menu"
+      },
+      {
+        "id": "70b2b781-6440-4bcf-8b38-a8bd93b1fc
