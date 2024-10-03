@@ -1,10 +1,11 @@
 from typing import Annotated, Any, Dict, Optional
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
-from config import DATABASE_URL,logger
+
 from fastapi import Depends, Form, HTTPException, Query, Request, WebSocket, status
 from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer, HTTPBearer
-from config import settings
+import config
+from config import logger
 import crud
 import models
 import schemas
@@ -19,16 +20,18 @@ class RaptOAuth2PasswordBearer(OAuth2PasswordBearer):
         return await super().__call__(request)
 
 oauth2_scheme = RaptOAuth2PasswordBearer(tokenUrl="/api/auth/login")
+DATABASE_URL = config.get_database_url()
+engine = create_engine(DATABASE_URL)
+models.Model.metadata.create_all(bind=engine)
+session_local = sessionmaker(autocommit=False,autoflush=False,bind=engine)
 
 def get_db():
     try:
-        engine = create_engine(DATABASE_URL)
-        models.Model.metadata.create_all(bind=engine)
-        session_local = sessionmaker(autocommit=False,autoflush=False,bind=engine)
         db = session_local()
         logger.info("Database connection established")
         yield db
     finally:
+        print("Closing database connection")
         db.close()
         
 async def get_app(client_id: Annotated[str, Form()], client_secret: Annotated[str, Form()], db: Session = Depends(get_db)) -> models.ClientApp:
@@ -63,7 +66,7 @@ async def phone_verify(phone_verification_code: Annotated[str, Form()], user: mo
         })
         
 async def authenticate(access_token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> models.User:
-    phone,client_id,client_secret = models.User.verify_jwt_token(db,access_token,settings.jwt_secret_key,settings.jwt_algorithm)
+    phone,client_id,client_secret = models.User.verify_jwt_token(db,access_token,config.settings.jwt_secret_key,config.settings.jwt_algorithm)
     if not phone:
         logger.error("No phone sub in token")
         raise HTTPException(status_code=401, detail={"message":"Invalid access token"})

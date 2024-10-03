@@ -8,6 +8,7 @@ from api import app
 from depends import get_db
 from fastapi.testclient import TestClient
 from init import initialize_db
+import config
 
 SessionLocal = None
 engine = None
@@ -28,7 +29,11 @@ class Settings(BaseSettings):
     superuser_phone: str = faker.unique.phone_number()[0:11]
 
 settings = Settings()
-TEST_DATABASE_URL = f"{settings.mysql_driver}://{settings.test_database_user}:{settings.test_database_password}@{settings.test_database_host}:{settings.test_database_port}"
+
+
+# TEST_DATABASE_URL = f"{settings.mysql_driver}://{settings.test_database_user}:{settings.test_database_password}@{settings.test_database_host}:{settings.test_database_port}"
+
+
 
 # seed database with faker data for all models
 def seed_db(db):
@@ -92,16 +97,23 @@ def seed_db(db):
         db.add(media)
     db.commit()
 
+def get_test_database_url():
+    URL_SAN_DB = f"{settings.mysql_driver}://{settings.test_database_user}:{settings.test_database_password}@{settings.test_database_host}:{settings.test_database_port}"
+    engine = create_engine(URL_SAN_DB)
+    with engine.connect() as conn:
+        conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {settings.test_database_name};"))
+    FULL_URL = f"{URL_SAN_DB}/{settings.test_database_name}"
+    print("Getting test database url")
+    return FULL_URL
 
+# swap the database url with the test database url in config
+config.get_database_url = get_test_database_url
 
 @pytest.fixture(scope="session")
 def db():
-    engine = create_engine(TEST_DATABASE_URL)
-    with engine.connect() as conn:
-        conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {settings.test_database_name};"))
-    engine = create_engine(f"{TEST_DATABASE_URL}/{settings.test_database_name}")
-    models.Model.metadata.create_all(engine)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    engine = create_engine(get_test_database_url())
+    models.Model.metadata.create_all(bind=engine)
+    SessionLocal = sessionmaker(autocommit=False,autoflush=False,bind=engine)
     session = SessionLocal(bind=engine)
     seed_db(session)
     initialize_db(session, settings, is_test=True)

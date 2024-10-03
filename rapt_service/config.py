@@ -27,10 +27,13 @@ class AppSettings(BaseSettings):
     mailtrap_api_token: str
     superuser_phone: str
     
-    
-
 settings = AppSettings()
-DATABASE_URL = f"{settings.mysql_driver}://{settings.mysql_user}:{settings.mysql_password}@{settings.mysql_host}:{settings.mysql_port}/{settings.mysql_database}"
+
+def get_database_url():
+    return f"{settings.mysql_driver}://{settings.mysql_user}:{settings.mysql_password}@{settings.mysql_host}:{settings.mysql_port}/{settings.mysql_database}"
+
+
+# DATABASE_URL = f"{settings.mysql_driver}://{settings.mysql_user}:{settings.mysql_password}@{settings.mysql_host}:{settings.mysql_port}/{settings.mysql_database}"
 
 DEFAULT_PERMISSIONS_CLASSES = ["create","read","update","delete"]
 

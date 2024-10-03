@@ -1,14 +1,8 @@
-from fastapi import FastAPI, Depends
-from fastapi.responses import HTMLResponse
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from fastapi import FastAPI
 import uvicorn
 import os
-import models
 import auth
 import chat
-from config import DATABASE_URL,logger
-from depends import get_db
 import sockets
 
 fastapi_config = {
