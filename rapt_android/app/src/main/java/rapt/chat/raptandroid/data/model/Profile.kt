@@ -1,7 +1,16 @@
 package rapt.chat.raptandroid.data.model
 
 import com.google.gson.annotations.SerializedName
-import rapt.chat.raptandroid.domain.model.UserProfile
+import retrofit2.http.Field
+
+data class ProfileUpdateRequest(
+    @Field("name")
+    val name: String? = null,
+    @Field("device_fcm_token")
+    val deviceFcmToken: String? = null,
+    @Field("contacts")
+    val contacts: List<Contact>? = null
+)
 
 data class ProfileResponse(
     @SerializedName("client_apps")
@@ -29,7 +38,14 @@ data class ProfileResponse(
     val updatedAt: String
 )
 
+data class UserProfile(
+    val name: String,
+    val phone: String,
+    val userId: String
+)
+
 fun ProfileResponse.toUserProfile() = UserProfile(
     name = name,
-    phone = phone
+    phone = phone,
+    userId = id
 )

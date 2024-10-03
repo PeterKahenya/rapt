@@ -1,11 +1,10 @@
 from pydantic_settings import BaseSettings
-from sqlalchemy import create_engine, select
-import crud
-import models
-from sqlalchemy.orm import Session,sessionmaker
-import config
-from config import settings,DATABASE_URL
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from depends import get_db
 import utils
+import models
+import config
 from config import settings
 
 
@@ -70,10 +69,6 @@ def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
 
 
 if __name__ == '__main__':
-    engine = create_engine(DATABASE_URL)
-    models.Model.metadata.create_all(bind=engine)
-    session_local = sessionmaker(autocommit=False,autoflush=False,bind=engine)
-    db = session_local()
-    initialize_db(db, settings)
-    db.close()
+    with get_db() as db:
+        initialize_db(db, settings)
     print("Database Initialized")

@@ -1,5 +1,6 @@
-package rapt.chat.raptandroid.presentation.login.components
+package rapt.chat.raptandroid.presentation.login
 
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -27,15 +28,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import rapt.chat.raptandroid.R
-import rapt.chat.raptandroid.presentation.login.LoginViewModel
+import rapt.chat.raptandroid.VerifyActivity
+import rapt.chat.raptandroid.presentation.ErrorText
+import rapt.chat.raptandroid.presentation.LoadingIndicator
 
 @Composable
 fun LoginScreen(
-    loginViewModel: LoginViewModel
+    viewModel: LoginViewModel
 ) {
-    val loginState by loginViewModel.state.collectAsStateWithLifecycle()
+
+    val loginState by viewModel.state.collectAsStateWithLifecycle()
     val phone: MutableState<String> = remember { mutableStateOf("") }
-    val code: MutableState<String> = remember { mutableStateOf("") }
+    val context = LocalContext.current
+
     Column(
         horizontalAlignment = Alignment.Start,
         modifier = Modifier
@@ -47,7 +52,8 @@ fun LoginScreen(
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Rapt Logo",
-            modifier = Modifier.testTag("loginLogo")
+            modifier = Modifier
+                .testTag("loginLogo")
                 .size(130.dp)
         )
         Text(
@@ -55,7 +61,8 @@ fun LoginScreen(
             color = Color(0xFF008080),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.testTag("loginTitle")
+            modifier = Modifier
+                .testTag("loginTitle")
                 .padding(top = 40.dp)
                 .padding(bottom = 40.dp)
         )
@@ -64,40 +71,34 @@ fun LoginScreen(
             onValueChange = {
                 phone.value = it
             },
-            label = { Text(text = "254 712 345 678") },
-            modifier = Modifier.testTag("loginPhoneField")
+            placeholder = { Text(text = "254 712 345 678") },
+            label = { Text(text = "Phone Number") },
+            modifier = Modifier
+                .testTag("loginPhoneField")
                 .fillMaxWidth()
         )
-
-        if (!loginState.error.isNullOrEmpty()) {
-            Text(text = loginState.error?: "An unexpected error occurred")
-        }
         if (loginState.isLoading) {
-            Text(text = "Loading...")
+            LoadingIndicator()
         }
-        if (loginState.loginResponse != null) {
-            LocalContext
-            Text(text = "SMS sent")
-            TextField(
-                value = code.value,
-                onValueChange = {
-                    code.value = it
-                },
-                label = { Text(text = "e.g. T9GTA8") },
-                modifier = Modifier.testTag("loginOTPField")
-                    .fillMaxWidth()
-                    .padding(top = 20.dp)
-            )
+        if (loginState.error != null) {
+            ErrorText(loginState.error!!)
         }
         Button(
-            onClick = { loginViewModel.login(phone.value) },
-            modifier = Modifier.testTag("loginNextButton")
+            onClick = { viewModel.login(phone.value) },
+            modifier = Modifier
+                .testTag("loginNextButton")
                 .padding(top = 100.dp)
                 .align(Alignment.End)
-                .width(150.dp)
+                .width(150.dp),
         ) {
             Text(text = "Next")
         }
+    }
+    if (loginState.loginResponse != null) {
+        println("LoginScreen loginResponse: ${loginState.loginResponse}")
+        val intent = Intent(context, VerifyActivity::class.java)
+        intent.putExtra("phone", phone.value)
+        context.startActivity(intent)
     }
 }
 

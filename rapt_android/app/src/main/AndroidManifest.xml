@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
         android:name=".RaptApplication"
@@ -16,14 +17,41 @@
         android:theme="@style/Theme.Rapt"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".ProfileActivity"
             android:exported="true"
-            android:label="Rapt Launcher"
+            android:label="@string/title_activity_profile"
+            android:theme="@style/Theme.Rapt" />
+        <activity android:name=".ContactsActivity"
+            android:exported="true"
+            android:label="Contacts List"
+            android:theme="@style/Theme.Rapt" />
+        <activity android:name=".ChatActivity"
+            android:exported="true"
+            android:label="Chat"
+            android:theme="@style/Theme.Rapt" />
+        <activity
+            android:name=".VerifyActivity"
+            android:exported="false"
+            android:label="@string/title_activity_verify"
+            android:theme="@style/Theme.Rapt" />
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false"
+            android:label="@string/title_activity_login"
+            android:theme="@style/Theme.Rapt" />
+        <activity
+            android:name=".ChatsListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:exported="true"
+            android:label="Rapt.Chat"
             android:theme="@style/Theme.Rapt">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
         </activity>
     </application>
 
