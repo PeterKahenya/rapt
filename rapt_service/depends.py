@@ -1,7 +1,6 @@
 from typing import Annotated, Any, Dict, Optional
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
-
 from fastapi import Depends, Form, HTTPException, Query, Request, WebSocket, status
 from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer, HTTPBearer
 import config
@@ -9,6 +8,7 @@ from config import logger
 import crud
 import models
 import schemas
+from sqlalchemy import pool
 
 class RaptOAuth2PasswordBearer(OAuth2PasswordBearer):
     async def __call__(self, request: Request=None, websocket: WebSocket=None) -> Optional[HTTPAuthorizationCredentials]:
@@ -20,19 +20,34 @@ class RaptOAuth2PasswordBearer(OAuth2PasswordBearer):
         return await super().__call__(request)
 
 oauth2_scheme = RaptOAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
 DATABASE_URL = config.get_database_url()
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,  # Enable pre-ping to check connection health
+    pool_size=10,        # Adjust pool size as needed
+    max_overflow=20,     # Adjust overflow size as needed
+    pool_recycle=3600    # Recycle connections after 1 hour
+)
 models.Model.metadata.create_all(bind=engine)
 session_local = sessionmaker(autocommit=False,autoflush=False,bind=engine)
 
 def get_db():
+    db = None
     try:
         db = session_local()
         logger.info("Database connection established")
         yield db
+    except pymysql.MySQLError as e:
+        logger.error(f"Database connection error: {e}")
+        if db:
+            db.close()
+        raise
     finally:
-        print("Closing database connection")
-        db.close()
+        if db:
+            logger.error("Closing database connection")
+            db.close()
+        
         
 async def get_app(client_id: Annotated[str, Form()], client_secret: Annotated[str, Form()], db: Session = Depends(get_db)) -> models.ClientApp:
     clientapp = db.execute(select(models.ClientApp)
