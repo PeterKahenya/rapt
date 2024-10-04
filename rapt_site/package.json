@@ -41,6 +41,10 @@
     "@types/react": "18.3.3",
     "postcss-import": "^16.1.0",
     "postcss-preset-mantine": "^1.17.0",
+<<<<<<< HEAD
     "typescript": "5.6.2"
+=======
+    "typescript": "5.5.4"
+>>>>>>> origin/main
   }
 }
