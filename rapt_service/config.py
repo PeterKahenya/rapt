@@ -1,12 +1,6 @@
 from pydantic_settings import BaseSettings
 import logging
-
-logger = logging.getLogger("rapt-api")
-handler = logging.StreamHandler()
-handler.setLevel(logging.DEBUG)
-handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
+from honeybadger.contrib.logger import HoneybadgerHandler
 
 
 class AppSettings(BaseSettings):
@@ -30,11 +24,15 @@ class AppSettings(BaseSettings):
     
 settings = AppSettings()
 
+hb_handler = HoneybadgerHandler(api_key=settings.honeybadger_api_key)
+hb_handler.setLevel(logging.DEBUG)
+hb_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger = logging.getLogger('honeybadger')
+logger.addHandler(hb_handler)
+
+
 def get_database_url():
     return f"{settings.mysql_driver}://{settings.mysql_user}:{settings.mysql_password}@{settings.mysql_host}:{settings.mysql_port}/{settings.mysql_database}"
-
-
-# DATABASE_URL = f"{settings.mysql_driver}://{settings.mysql_user}:{settings.mysql_password}@{settings.mysql_host}:{settings.mysql_port}/{settings.mysql_database}"
 
 DEFAULT_PERMISSIONS_CLASSES = ["create","read","update","delete"]
 

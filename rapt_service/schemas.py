@@ -112,6 +112,7 @@ class UserVerify(BaseModel):
 class AccessToken(BaseModel):
     access_token: str
     token_type: str = "Bearer"
+    expires_in: int
     
 class RefreshToken(BaseModel):
     access_token: str

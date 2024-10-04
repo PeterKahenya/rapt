@@ -26,7 +26,6 @@ async def get_obj_or_404(db: Session, model: models.Model, id: UUID4) -> models.
     """
         Returns one object from the database by pk id or raise an exception:  sqlalchemy.orm.exc.NoResultFound if no result is found
     """
-    print(f"DB SESSION: {db}")
     logger.info(f"Getting {model.__name__} with id: {id}")
     try:
         return db.execute(select(model).where(model.id == id)).scalar_one()
@@ -63,7 +62,6 @@ async def filter_objects(db: Session, model: models.Model, params: dict = {}, so
             'in': lambda col, val: col.in_(val),
         }
         query = select(model)
-        # print(f"All Results: {[u.to_dict() for u in db.scalars(query).all()]}")
         for key, value in params.items():
             if '__' in key:
                 column_name, condition = key.split('__', 1)
@@ -296,7 +294,6 @@ async def paginate(
     if q:
         data = await search_objects(db=db, model=model,q=q)
     elif params and len(params) > 0:
-        print(f"Params: {params}")
         data = await filter_objects(db=db, model=model,params=params,sort_by=sort_by)
     else:
         data = await filter_objects(db=db, model=model, params={},sort_by=sort_by)

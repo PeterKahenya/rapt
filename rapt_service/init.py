@@ -27,7 +27,6 @@ def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
                 db.add(permission_db)
                 db.commit()
                 db.refresh(permission_db)
-                print(f"Permission: {permission_db.codename} added")
     # create superuser role
     superuser_role = db.execute(select(models.Role).where(models.Role.name=="Admin")).scalars().all()
     if not superuser_role:
@@ -71,4 +70,3 @@ def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
 if __name__ == '__main__':
     with get_db() as db:
         initialize_db(db, settings)
-    print("Database Initialized")

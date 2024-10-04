@@ -3,13 +3,12 @@ import pymysql
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi import Depends, Form, HTTPException, Query, Request, WebSocket, status
-from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer, HTTPBearer
+from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer
 import config
 from config import logger
 import crud
 import models
 import schemas
-from sqlalchemy import pool
 
 class RaptOAuth2PasswordBearer(OAuth2PasswordBearer):
     async def __call__(self, request: Request=None, websocket: WebSocket=None) -> Optional[HTTPAuthorizationCredentials]:
@@ -109,10 +108,8 @@ async def check_permission(perm: str, user: models.User) -> models.User:
     if user.is_superuser:
         return user
     elif await user.has_perm(perm):
-        print(f"User has permission: {perm}")
         return user
     else:
-        print(f"User has NO permission: {perm}")
         raise HTTPException(status_code=403,detail={"message":"User not authorized to view this resource"})
     
 def authorize(perm: str):
