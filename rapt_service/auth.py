@@ -35,6 +35,9 @@ async def login(db: Session = Depends(get_db), user: models.User = Depends(get_o
 async def verify(db: Session = Depends(get_db), user: models.User = Depends(phone_verify), app: models.ClientApp = Depends(get_app)) -> schemas.AccessToken:
     try:
         access_token = user.create_jwt_token(app, settings.jwt_secret_key,settings.jwt_algorithm,settings.access_token_expiry_minutes)
+        chatter_role = db.execute(select(models.Role).where(models.Role.name=="Chatter")).scalars().first()
+        if chatter_role not in user.roles and chatter_role:
+            user.roles.append(chatter_role)  # by default a user is a chatter
         db.commit()
         db.refresh(user)
         return schemas.AccessToken(access_token=access_token,token_type="Bearer",expires_in=settings.access_token_expiry_minutes*60)

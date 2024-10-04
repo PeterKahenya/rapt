@@ -5,7 +5,7 @@ from depends import get_db
 import utils
 import models
 import config
-from config import settings
+from config import settings, logger
 
 
 def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
@@ -38,6 +38,21 @@ def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
         db.refresh(superuser_role)
     else:
         superuser_role = superuser_role[0]
+    # create chatter role
+    chatter_role_get = db.execute(select(models.Role).where(models.Role.name=="Chatter")).scalars().all()
+    if not chatter_role_get:
+        chatter_role = models.Role(name="Chatter",description="Chat User")
+    else:
+        chatter_role = chatter_role_get[0]
+    chatter_role.permissions.clear()
+    chatter_perm_codenames = ["read_users","update_users","create_chatrooms","read_chatrooms","update_chatrooms","delete_chatrooms","read_groups","update_groups","create_groups","delete_groups","read_chats","create_chats","delete_chats"]
+    chatter_role_permissions = db.execute(select(models.Permission).where(models.Permission.codename.in_(chatter_perm_codenames))).scalars().all()
+    for permission in chatter_role_permissions:
+        chatter_role.permissions.append(permission)
+    db.add(chatter_role)
+    db.commit()
+    db.refresh(chatter_role)
+    logger.info("Roles Chatter and Admin created")
     # create superuser
     superuser = db.execute(select(models.User).where(models.User.phone==settings.superuser_phone)).scalar_one_or_none()
     if not superuser:
@@ -68,5 +83,9 @@ def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
 
 
 if __name__ == '__main__':
-    with get_db() as db:
+    try:
+        db = next(get_db())
         initialize_db(db, settings)
+    except Exception as e:
+        logger.error(e)
+        raise e
