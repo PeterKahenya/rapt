@@ -103,7 +103,6 @@ def get_test_database_url():
     with engine.connect() as conn:
         conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {settings.test_database_name};"))
     FULL_URL = f"{URL_SAN_DB}/{settings.test_database_name}"
-    print("Getting test database url")
     return FULL_URL
 
 # swap the database url with the test database url in config

@@ -264,13 +264,11 @@ async def test_chatrooms_api(mock_send_sms,client,db):
         "members": [m.to_dict() for m in members],
     }
     create_response = client.post("/api/chat/rooms/",json=chatroom_data,headers={"Authorization": f"Bearer {access_token}"})
-    # print(create_response.json())
     assert create_response.status_code == 201
     assert create_response.json()["members"][0]["phone"] == members[0].phone
     
     # get chatrooms
     response = client.get("/api/chat/rooms/",headers={"Authorization": f"Bearer {access_token}"})
-    # print(response.json())
     assert response.status_code == 200
     assert len(response.json()) >= 1
     # get single chatroom
@@ -305,7 +303,6 @@ async def test_groups_api(mock_send_sms,client,db):
         "members": [m.to_dict() for m in members],
     }
     create_response = client.post("/api/chat/rooms/",json=chatroom_data,headers={"Authorization": f"Bearer {access_token}"})
-    # print(create_response.json())
     assert create_response.status_code == 201
     assert create_response.json()["members"][0]["phone"] == members[0].phone
     chatroom_id = create_response.json()["id"]

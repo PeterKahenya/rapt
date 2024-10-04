@@ -6,11 +6,8 @@ import auth
 import chat
 from depends import authorize, get_db
 import sockets
-from honeybadger import honeybadger, contrib
-from fastapi.routing import APIRouter
-from honeybadger.contrib.fastapi import HoneybadgerRoute
+from honeybadger import honeybadger
 from config import settings
-from sqlalchemy.orm import Session
 import models
 
 fastapi_config = {

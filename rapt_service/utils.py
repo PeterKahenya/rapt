@@ -70,9 +70,6 @@ def mailtrap_send_email(to: Tuple[str,str], subject: str, message: str) -> bool:
             "Accept": "application/json",
             "Api-Token": settings.mailtrap_api_token
         }
-
         response = requests.post(url, json=payload, headers=headers)
-
-        print(response.json())
     except Exception as e:
         raise e
