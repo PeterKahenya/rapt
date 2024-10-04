@@ -36,7 +36,7 @@ async def verify(db: Session = Depends(get_db), user: models.User = Depends(phon
     try:
         access_token = user.create_jwt_token(app, settings.jwt_secret_key,settings.jwt_algorithm,settings.access_token_expiry_minutes)
         chatter_role = db.execute(select(models.Role).where(models.Role.name=="Chatter")).scalars().first()
-        if chatter_role not in user.roles:
+        if chatter_role not in user.roles and chatter_role:
             user.roles.append(chatter_role)  # by default a user is a chatter
         db.commit()
         db.refresh(user)

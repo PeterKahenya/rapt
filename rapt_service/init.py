@@ -52,6 +52,7 @@ def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
     db.add(chatter_role)
     db.commit()
     db.refresh(chatter_role)
+    logger.info("Roles Chatter and Admin created")
     # create superuser
     superuser = db.execute(select(models.User).where(models.User.phone==settings.superuser_phone)).scalar_one_or_none()
     if not superuser:
