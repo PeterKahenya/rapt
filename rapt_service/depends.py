@@ -1,4 +1,5 @@
 from typing import Annotated, Any, Dict, Optional
+import pymysql
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi import Depends, Form, HTTPException, Query, Request, WebSocket, status

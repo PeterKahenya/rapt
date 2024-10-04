@@ -6,6 +6,7 @@ from unittest.mock import patch
 import uuid
 import json
 from .conftest import settings as test_settings, faker
+from sqlalchemy.orm import Session
 
 pytest_plugins = ('pytest_asyncio',)
     
@@ -349,7 +350,7 @@ async def test_groups_api(mock_send_sms,client,db):
 # test chat websockets
 @pytest.mark.asyncio
 @patch("utils.smsleopard_send_sms")
-async def test_websockets(mock_send_sms,client,db):
+async def test_websockets(mock_send_sms,client,db: Session):
     mock_send_sms.return_value = True
     access_token: str = await authenticate(client,db)
     # get chatroom where user is a member

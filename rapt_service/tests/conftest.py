@@ -108,12 +108,12 @@ def get_test_database_url():
 
 # swap the database url with the test database url in config
 config.get_database_url = get_test_database_url
+engine = create_engine(get_test_database_url())
+models.Model.metadata.create_all(bind=engine)
+SessionLocal = sessionmaker(autocommit=False,autoflush=False,bind=engine)
 
 @pytest.fixture(scope="session")
 def db():
-    engine = create_engine(get_test_database_url())
-    models.Model.metadata.create_all(bind=engine)
-    SessionLocal = sessionmaker(autocommit=False,autoflush=False,bind=engine)
     session = SessionLocal(bind=engine)
     seed_db(session)
     initialize_db(session, settings, is_test=True)

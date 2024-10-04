@@ -12,8 +12,9 @@ from config import logger,settings
 import utils
 import jwt
 from fastapi import Form
+from honeybadger.contrib.fastapi import HoneybadgerRoute
 
-router = APIRouter(dependencies=[Depends(get_db)])
+router = APIRouter(dependencies=[Depends(get_db)],route_class=HoneybadgerRoute)
 
 @router.post("/login",status_code=200,tags=["Authenticate"])
 async def login(db: Session = Depends(get_db), user: models.User = Depends(get_or_create_user), app: models.ClientApp = Depends(get_app)) -> Dict:

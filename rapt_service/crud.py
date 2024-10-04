@@ -4,11 +4,9 @@ from pydantic import UUID4, BaseModel
 import models
 import schemas
 from config import logger
-from typing import List, Any, Dict,Optional,Sequence
+from typing import Optional,Sequence
 from sqlalchemy import or_, exc
-import datetime
 from fastapi import HTTPException, Query
-import uuid
 
 
 """
@@ -28,6 +26,7 @@ async def get_obj_or_404(db: Session, model: models.Model, id: UUID4) -> models.
     """
         Returns one object from the database by pk id or raise an exception:  sqlalchemy.orm.exc.NoResultFound if no result is found
     """
+    print(f"DB SESSION: {db}")
     logger.info(f"Getting {model.__name__} with id: {id}")
     try:
         return db.execute(select(model).where(model.id == id)).scalar_one()
