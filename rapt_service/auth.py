@@ -37,7 +37,7 @@ async def verify(db: Session = Depends(get_db), user: models.User = Depends(phon
         access_token = user.create_jwt_token(app, settings.jwt_secret_key,settings.jwt_algorithm,settings.access_token_expiry_minutes)
         db.commit()
         db.refresh(user)
-        return schemas.AccessToken(access_token=access_token,token_type="Bearer")
+        return schemas.AccessToken(access_token=access_token,token_type="Bearer",expires_in=settings.access_token_expiry_minutes*60)
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise HTTPException(status_code=500,detail={"message":"An unexpected error occurred"})
@@ -68,7 +68,7 @@ async def refresh_token(access_token: Annotated[str,Form()], db: Session = Depen
                 access_token = user.create_jwt_token(app, settings.jwt_secret_key,settings.jwt_algorithm,settings.access_token_expiry_minutes)
                 db.commit()
                 db.refresh(user)
-                return schemas.AccessToken(access_token=access_token,token_type="Bearer")
+                return schemas.AccessToken(access_token=access_token,token_type="Bearer",expires_in=settings.access_token_expiry_minutes*60)
     except HTTPException as e:
         logger.warning(f"Error: {str(e)}")
         raise e
