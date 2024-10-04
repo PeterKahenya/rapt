@@ -34,6 +34,7 @@ env:
     SMSLEOPARD_API_SECRET: ${{ secrets.SMSLEOPARD_API_SECRET }}
     MAILTRAP_API_TOKEN: ${{ secrets.MAILTRAP_API_TOKEN }}
     SUPERUSER_PHONE: ${{ secrets.SUPERUSER_PHONE }}
+    HONEYBADGER_API_KEY: ${{ secrets.HONEYBADGER_API_KEY }}
 
 jobs:
     test:
@@ -159,6 +160,7 @@ jobs:
                   SMSLEOPARD_API_SECRET=${{ env.SMSLEOPARD_API_SECRET }}
                   MAILTRAP_API_TOKEN=${{ env.MAILTRAP_API_TOKEN }}
                   SUPERUSER_PHONE=${{ env.SUPERUSER_PHONE }}
+                  HONEYBADGER_API_KEY=${{ env.HONEYBADGER_API_KEY }}
                   EOF
 
                   kubectl delete secrets rapt-prod-env-secrets || true
