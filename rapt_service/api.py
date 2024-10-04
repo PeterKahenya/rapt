@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, Request, WebSocket
 import uvicorn
 import os
 import auth
@@ -7,6 +7,7 @@ import sockets
 from honeybadger import honeybadger, contrib
 from fastapi.routing import APIRouter
 from honeybadger.contrib.fastapi import HoneybadgerRoute
+from config import settings
 
 fastapi_config = {
     "title":"RaptChat Service",
@@ -14,7 +15,7 @@ fastapi_config = {
     "root_path": "/api",
 }
 
-honeybadger.configure(api_key="Your project API key")
+honeybadger.configure(api_key=settings.honeybadger_api_key,environment="production",report_data=True)
 app = FastAPI(**fastapi_config)
 app.include_router(auth.router,prefix="/auth")
 app.include_router(chat.router,prefix="/chat")
@@ -27,6 +28,16 @@ async def chatsocket_wrapper(websocket: WebSocket, room_id: str):
         raise
 app.add_api_websocket_route("/chatsocket/{room_id}",chatsocket_wrapper)
 
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    honeybadger.context(
+        url=str(request.url),
+        method=request.method,
+        headers=dict(request.headers),
+        query_params=dict(request.query_params)
+    )
+    response = await call_next(request)
+    return response
 
 
 if __name__ == "__main__":

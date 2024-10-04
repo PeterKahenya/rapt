@@ -26,6 +26,7 @@ class AppSettings(BaseSettings):
     smsleopard_api_secret: str
     mailtrap_api_token: str
     superuser_phone: str
+    honeybadger_api_key: str
     
 settings = AppSettings()
 
