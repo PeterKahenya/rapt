@@ -9,8 +9,9 @@ import schemas
 import utils
 import crud
 from config import logger
+from honeybadger.contrib.fastapi import HoneybadgerRoute
 
-router = APIRouter(dependencies=[Depends(get_db)])
+router = APIRouter(dependencies=[Depends(get_db)],route_class=HoneybadgerRoute)
 
 @router.post("/rooms",status_code=201,tags=["Rooms"])
 async def create_room(
