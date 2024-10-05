@@ -152,6 +152,40 @@ async def test_users_api(mock_send_sms,client,db):
     user = db.execute(select(models.User).where(models.User.id == user_id)).scalar_one_or_none()
     assert user is None
     
+# test contacts api calls
+@pytest.mark.asyncio
+@patch("utils.smsleopard_send_sms")
+async def test_contacts_api(mock_send_sms,client,db):
+    mock_send_sms.return_value = True
+    access_token: str = await authenticate(client,db)
+    # profile
+    response = client.get("/auth/me",headers={"Authorization": f"Bearer {access_token}"})
+    user_id = response.json()["id"]
+    # upload contacts
+    contacts_data = [
+        {"phone": faker.unique.phone_number()[0:11],"name": faker.name()},
+        {"phone": faker.unique.phone_number()[0:11],"name": faker.name()},
+        {"phone": faker.unique.phone_number()[0:11],"name": faker.name()},
+    ]
+    response = client.post(f"/auth/users/{user_id}/contacts",json=contacts_data,headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 201
+    assert len(response.json()) >= 3
+    assert response.json()[0]["phone"] == contacts_data[0]["phone"]
+    print(response.json())
+    # update contact
+    new_contact_data = {
+        "name": "Test Contact",
+        "user_id": user_id,
+        "contact_id": response.json()[0]["contact_id"]       
+    }
+    response = client.put(f"/auth/users/{user_id}/contacts",json=new_contact_data,headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert response.json()["name"] == new_contact_data["name"]
+    # read contacts
+    response = client.get(f"/auth/users/{user_id}/contacts",headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert len(response.json()) >= 1
+    
 # test clientapps api calls
 @pytest.mark.asyncio
 @patch("utils.smsleopard_send_sms")

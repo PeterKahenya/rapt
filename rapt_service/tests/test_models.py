@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 import jwt
+from sqlalchemy import insert
 from .conftest import settings
 import models
 from sqlalchemy.sql import select
@@ -53,10 +54,16 @@ async def test_user_model(db):
     db.add(user)
     db.commit()
     assert user in db
-    contact1 = models.User(name="Test User 1", phone="1234567891")
-    contact2 = models.User(name="Test User 2", phone="1234567892")
-    user.contacts.append(contact1)
-    user.contacts.append(contact2)
+    user1 = models.User(name="Test User 1", phone="1234567891")
+    user2 = models.User(name="Test User 2", phone="1234567892")
+    db.add(user1)
+    db.add(user2)
+    db.commit()
+    contact1 = models.Contact(name="Test Contact 1", user_id=user.id, contact_id=user1.id)
+    contact2 = models.Contact(name="Test Contact 2", user_id=user.id, contact_id=user2.id)
+    db.add(contact1)
+    db.add(contact2)
+    db.commit()
     db.add(user)
     db.commit()
     db.refresh(user)

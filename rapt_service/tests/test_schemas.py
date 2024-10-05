@@ -82,32 +82,47 @@ def test_user_schema(db):
         "name": "Test User 1",
         "is_superuser": True,
         "roles": [schemas.ModelBase.model_validate(role).model_dump() for role in roles],       
-        "contacts": [schemas.Contact.model_validate(contact).model_dump() for contact in contacts]
+        # "contacts": [schemas.Contact.model_validate(contact).model_dump() for contact in contacts]
     })
     assert user_update.phone == "1234567891"
     assert user_update.name == "Test User 1"
     assert user_update.is_superuser == True
     assert user_update.roles[0].id == roles[0].id
-    assert user_update.contacts[0].id == contacts[0].id
+    # assert user_update.contacts[0].id == contacts[0].id
     user_db = db.execute(select(models.User)).scalars().first()
     user_schema = schemas.UserInDBBase.model_validate(user_db)
     assert user_schema.phone == user_db.phone
     assert user_schema.name == user_db.name
     assert user_schema.is_superuser == user_db.is_superuser
     assert len(user_schema.roles) == len(user_db.roles)
-    assert len(user_schema.contacts) == len(user_db.contacts)
-    contact = schemas.Contact(**{
-        "phone": "0700000000",
-        "name": "Test Contact"
-    })
-    assert contact.phone == "0700000000"
-    assert contact.name == "Test Contact"
+    # assert len(user_schema.contacts) == len(user_db.contacts)
     user_verify = schemas.UserVerify(**{
         "phone": "0700000000",
         "phone_verification_code": "123456"
     })
     assert user_verify.phone == "0700000000"
     assert user_verify.phone_verification_code == "123456"
+
+def test_contact_schema(db):
+    contact_create = schemas.ContactCreate(**{
+        "phone": "0700000000",
+        "name": "Test Contact"
+    })
+    assert contact_create.phone == "0700000000"
+    assert contact_create.name == "Test Contact"
+    contact_update = schemas.ContactUpdate(**{
+        "name": "Test Contact 1",
+        "user_id": str(uuid.uuid4()),
+        "contact_id": str(uuid.uuid4())
+    })
+    assert contact_update.name == "Test Contact 1"
+    contact_db = db.execute(select(models.Contact)).scalars().first()
+    contact_schema = schemas.ContactInDBBase.model_validate(contact_db)
+    assert contact_schema.phone == contact_db.phone
+    assert contact_schema.name == contact_db.name
+    assert contact_schema.is_active == contact_db.is_active
+    assert contact_schema.user_id == contact_db.user_id
+    assert contact_schema.contact_id == contact_db.contact_id
     
 # test client app schemas
 def test_clientapp_schema(db):

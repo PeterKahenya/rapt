@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict
+from typing import Annotated, Any, Dict, List
 from fastapi import APIRouter, HTTPException
 from fastapi import Depends
 from pydantic import UUID4
@@ -251,6 +251,54 @@ async def delete_user(
         logger.error(f"Unable to delete user")
         raise HTTPException(status_code=500,detail={
             "message":"Something went wrong"
+        })
+        
+# get user contacts
+@router.get("/users/{user_id}/contacts", status_code=200, tags=["Contacts"])
+async def get_user_contacts(
+                                user_id: UUID4,
+                                user: models.User = Depends(authorize(perm="read_contacts")),
+                                db: Session = Depends(get_db)
+                            ) -> List[schemas.ContactInDBBase]:
+    return user.contacts
+        
+# upload contacts
+@router.post("/users/{user_id}/contacts", status_code=201, tags=["Contacts"])
+async def upload_contacts(
+                            user_id: UUID4,
+                            contacts: List[schemas.ContactCreate],
+                            user: models.User = Depends(authorize(perm="create_contacts")),
+                            db: Session = Depends(get_db)
+                        ) -> List[schemas.ContactInDBBase]:
+    try:
+        await crud.get_obj_or_404(db=db,model=models.User,id=user_id)
+        contacts_db = []
+        for contact in contacts:
+            contact.user_id = user_id
+            contact_db = await crud.create_contact(db=db,contact_create_data=contact)
+            contacts_db.append(contact_db)
+        return contacts_db
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        raise HTTPException(status_code=500,detail={
+            "message":"An unexpected error occurred {e}"
+        })
+        
+# update contact
+@router.put("/users/{user_id}/contacts", status_code=200, tags=["Contacts"])
+async def update_contact(
+                            user_id: UUID4,
+                            contact_update: schemas.ContactUpdate,
+                            user: models.User = Depends(authorize(perm="update_contacts")),
+                            db: Session = Depends(get_db)
+                        ) -> schemas.ContactInDBBase:
+    try:
+        contact_db: models.Contact = await crud.update_contact(db=db,contact_update_data=contact_update)
+        return contact_db
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        raise HTTPException(status_code=500,detail={
+            "message":f"An unexpected error occurred: {e}"
         })
 
 # create client app
