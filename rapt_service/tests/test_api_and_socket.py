@@ -129,7 +129,7 @@ async def test_users_api(mock_send_sms,client,db):
     assert response.json()["phone"] == user_db.phone
     # update user
     users: list[models.User] = db.execute(select(models.User)).scalars().all()
-    user_id =user[1].id  if users[0].phone == test_settings.superuser_phone else users[0].id
+    user_id = users[1].id  if users[0].phone == test_settings.superuser_phone else users[0].id
     contacts = [users[1].to_dict(),users[2].to_dict(),users[3].to_dict(),{"name": "Contact 33","phone": faker.unique.phone_number()[0:11]}]
     roles: list[models.Role] = db.execute(select(models.Role)).scalars().all()[:2]
     update_data = {
