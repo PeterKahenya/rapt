@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 import pytest
-from sqlalchemy import select,exc
+from sqlalchemy import delete, select,exc
 import crud
 import models
 import schemas
@@ -183,7 +183,6 @@ async def test_user_crud(db):
         "phone_verification_code_expiry_at": "2021-01-01",
         "device_fcm_token": "Test FCM Token1",
         "last_seen": "2021-01-01",
-        "contacts": [{"phone":"0790003390","name":"Test Contact"},{"phone":"0790003391","name":"Test Contact1"}],
         "roles": [r.to_dict() for r in roles]
     })
     user_db = await crud.update_user(db, user_db.id, user_update)
@@ -191,7 +190,29 @@ async def test_user_crud(db):
     # delete user
     is_deleted = await crud.delete_obj(db, models.User, user_db.id)
     assert is_deleted
-    
+
+# test contact crud operations
+@pytest.mark.asyncio
+async def test_contact_crud(db):
+    # create contact
+    users = db.execute(select(models.User)).scalars().all()
+    user = users[0]
+    contact_create = schemas.ContactCreate(**{
+        "phone": "0790003390",
+        "name": "Test Contact",
+        "user_id": str(user.id)
+    })
+    contact_db = await crud.create_contact(db, contact_create)
+    assert contact_db in db
+    # update contact
+    contact_update = schemas.ContactUpdate(**{
+        "name": "Test Contact1",
+        "user_id": str(contact_db.user_id),
+        "contact_id": str(contact_db.contact_id)
+    })
+    contact_db = await crud.update_contact(db, contact_update)
+    assert contact_db.phone == contact_db.contact.phone
+    assert contact_db.name == "Test Contact1"
 
 # test clientapp crud operations
 @pytest.mark.asyncio

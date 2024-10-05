@@ -7,6 +7,7 @@ from typing import Optional,List, Tuple
 from config import logger
 import jwt
 import utils
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class Model(DeclarativeBase):
@@ -72,21 +73,32 @@ class Role(Model):
     )
 
 
-contacts_association = Table(
-    'contacts',
-    Model.metadata,
-    Column('name', String(50), nullable=True),
-    Column('user_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True),
-    Column('contact_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True)
-)
-
-
 chatroom_members_association = Table(
     'chatroom_members',
     Model.metadata,
     Column('user_id', Uuid, ForeignKey('users.id',ondelete="CASCADE"), primary_key=True),
     Column('chatroom_id', Uuid, ForeignKey('chatrooms.id',ondelete="CASCADE"),primary_key=True)
 )
+
+class Contact(Model):
+    __tablename__ = 'contacts'
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"), primary_key=True, default=uuid.uuid4)    
+    contact_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(50), nullable=True)
+    user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='contacts')
+    contact: Mapped["User"] = relationship('User', foreign_keys=[contact_id], back_populates='contact_of')
+    is_active: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
+    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
+    
+    @hybrid_property
+    def is_active(self):
+        return self.contact.is_active
+    
+    @hybrid_property
+    def phone(self):
+        return self.contact.phone
+
 
 class User(Model):
     __tablename__ = "users"
@@ -103,13 +115,8 @@ class User(Model):
     last_seen: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime())
     created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(onupdate=datetime.datetime.now)
-    contacts: Mapped[List["User"]] = relationship(
-        'User',
-        secondary=contacts_association,
-        primaryjoin=id == contacts_association.c.user_id,
-        secondaryjoin=id == contacts_association.c.contact_id,
-        backref=backref('contact_of', lazy='dynamic')
-    )
+    contacts: Mapped[List[Contact]]  = relationship('Contact', foreign_keys='Contact.user_id', back_populates='user')
+    contact_of = relationship('Contact', foreign_keys='Contact.contact_id', back_populates='contact')
     roles: Mapped[List[Role]] = relationship(
         'Role',
         secondary=user_roles_association,

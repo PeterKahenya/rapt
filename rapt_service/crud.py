@@ -139,7 +139,6 @@ async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.Use
     user: models.User = await get_obj_or_404(db=db, model=models.User,  id=user_id)
     update_data = user_update_data.model_dump(exclude_unset=True)
     roles = update_data.pop('roles', None)
-    contacts = update_data.pop('contacts', None)
     if 'phone' in update_data:
         user_with_phone = db.execute(select(models.User).where(models.User.phone == update_data['phone'])).scalar_one_or_none()
         if user_with_phone and user_with_phone.id != user.id:
@@ -152,20 +151,39 @@ async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.Use
             role_ids = [r["id"] for r in roles]
             new_roles = db.execute(select(models.Role).where(models.Role.id.in_(role_ids))).scalars().all()
             user.roles = new_roles
-    if contacts is not None: # TODO: contacts should probably be updated in their own endpoint and function like /api/users/{user_id}/contacts
-        if len(contacts) == 0:
-            user.contacts.clear()
-        else:
-            for contact in user_update_data.contacts:
-                contact_obj = db.execute(select(models.User).where(models.User.phone == contact.phone)).scalar_one_or_none()
-                if not contact_obj:
-                    contact_obj = await create_obj(db=db, model=models.User, schema_model=schemas.UserCreate(name=contact.name, phone=contact.phone))
-                if contact_obj not in user.contacts:
-                    user.contacts.append(contact_obj)
     db.commit()
     db.refresh(user)
     logger.info(f"User updated: {user}")
     return user
+
+# create contact
+async def create_contact(db: Session, contact_create_data: schemas.ContactCreate) -> models.Contact:
+    logger.info(f"Creating contact with data: {contact_create_data.model_dump()}")
+    user_db: models.User = await get_obj_or_404(db=db,model=models.User,id=contact_create_data.user_id)
+    contact_user = db.execute(select(models.User).where(models.User.phone == contact_create_data.phone)).scalar_one_or_none()
+    if not contact_user:
+        contact_user = models.User(phone=contact_create_data.phone, name=contact_create_data.name)
+        db.add(contact_user)
+        db.commit()
+        db.refresh(contact_user)
+    contact = models.Contact(name=contact_create_data.name, user_id=user_db.id, contact_id=contact_user.id)
+    db.add(contact)
+    db.commit()
+    db.refresh(contact)
+    return contact
+
+# update contact
+async def update_contact(db: Session, contact_update_data: schemas.ContactUpdate) -> models.Contact:
+    logger.info(f"Updating contact with user id: {contact_update_data.user_id} ")
+    contact = db.execute(
+                            select(models.Contact)
+                            .where(models.Contact.user_id == contact_update_data.user_id)
+                            .where(models.Contact.contact_id == contact_update_data.contact_id)
+                        ).scalar_one()
+    contact.name = contact_update_data.name
+    db.commit()
+    db.refresh(contact)
+    return contact
 
 # update client app
 async def update_clientapp(db: Session, client_app_id: UUID4, client_app_update_data: schemas.ClientAppUpdate) -> models.ClientApp:

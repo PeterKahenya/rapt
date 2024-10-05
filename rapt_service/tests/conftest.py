@@ -30,11 +30,6 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-
-# TEST_DATABASE_URL = f"{settings.mysql_driver}://{settings.test_database_user}:{settings.test_database_password}@{settings.test_database_host}:{settings.test_database_port}"
-
-
-
 # seed database with faker data for all models
 def seed_db(db):
     # faker add content types
@@ -62,8 +57,12 @@ def seed_db(db):
     # faker add contacts
     user = db.execute(select(models.User)).scalars().first()
     for i in range(20):
-        contact = models.User(phone=faker.unique.phone_number()[0:11],name=faker.name())
-        user.contacts.append(contact)
+        contact_user = models.User(phone=faker.unique.phone_number()[0:11],name=faker.name())
+        db.add(contact_user)
+        db.commit()
+        contact = models.Contact(name=faker.name(),user_id=user.id,contact_id=contact_user.id)
+        db.add(contact_user)
+        db.add(contact)
         db.add(user)
     db.commit()
     # faker client apps

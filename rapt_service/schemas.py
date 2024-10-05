@@ -67,17 +67,7 @@ class UserCreate(BaseModel):
     name: str
     is_superuser: Optional[bool] = False
     device_fcm_token: Optional[str] = None
-    
-class Contact(ModelBase):
-    phone: str
-    name: str
-    is_active: Optional[bool] = False
-    id: Optional[UUID4] = None
-    
-class ContactUpload(ModelBase):
-    phone: str
-    name: str
-    id: Optional[UUID4] = None
+
 
 class UserUpdate(BaseModel):
     phone: Optional[str] = None
@@ -89,7 +79,6 @@ class UserUpdate(BaseModel):
     phone_verification_code: Optional[str] = None
     phone_verification_code_expiry_at: Optional[datetime] = None
     last_seen: Optional[datetime] = None
-    contacts: Optional[List[ContactUpload]] = []
     roles: Optional[List[ModelBase]] = []
     
 class UserInDBBase(ModelInDBBase):
@@ -101,13 +90,33 @@ class UserInDBBase(ModelInDBBase):
     phone_verification_code: str | None
     phone_verification_code_expiry_at: datetime | None
     last_seen: datetime | None
-    contacts: List[Contact] = []
     roles: List[RoleInDBBase] = []
     client_apps: List[ModelBase] = []
 
 class UserVerify(BaseModel):
     phone: str
     phone_verification_code: str
+    
+class ContactCreate(BaseModel):
+    phone: str
+    name: str
+    user_id: Optional[UUID4] = None
+    
+class ContactUpdate(BaseModel):
+    name: Optional[str] = None
+    user_id: Optional[UUID4] = None
+    contact_id: Optional[UUID4] = None
+
+class ContactInDBBase(BaseModel):
+    phone: str
+    name: str
+    is_active: bool
+    user_id: UUID4
+    contact_id: UUID4
+    
+    model_config = {
+        "from_attributes": True
+    }
     
 class AccessToken(BaseModel):
     access_token: str
