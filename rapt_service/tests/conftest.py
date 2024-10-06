@@ -4,8 +4,6 @@ from sqlalchemy.orm import sessionmaker
 import models
 from pydantic_settings import BaseSettings
 from faker import Faker
-from api import app
-from depends import get_db
 from fastapi.testclient import TestClient
 from init import initialize_db
 import config
@@ -121,6 +119,9 @@ def db():
     session.close()
     models.Model.metadata.drop_all(bind=engine)
     engine.dispose()
+    
+from api import app
+from depends import get_db
     
 @pytest.fixture(scope="session")
 def client(db):
