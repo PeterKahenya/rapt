@@ -82,8 +82,9 @@ chatroom_members_association = Table(
 
 class Contact(Model):
     __tablename__ = 'contacts'
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"), primary_key=True)    
-    contact_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"), primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True,unique=True,default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"))    
+    contact_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(50), nullable=True)
     user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='contacts')
     contact: Mapped["User"] = relationship('User', foreign_keys=[contact_id], back_populates='contact_of')
