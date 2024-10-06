@@ -1,7 +1,7 @@
 import uuid
 import datetime
 from fastapi import HTTPException
-from sqlalchemy import Column,Uuid,String,ForeignKey,Table,DateTime
+from sqlalchemy import Column, UniqueConstraint,Uuid,String,ForeignKey,Table,DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column,relationship,backref,Session
 from typing import Optional,List, Tuple
 from config import logger
@@ -82,8 +82,8 @@ chatroom_members_association = Table(
 
 class Contact(Model):
     __tablename__ = 'contacts'
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"), primary_key=True, default=uuid.uuid4)    
-    contact_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"), primary_key=True)    
+    contact_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"), primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=True)
     user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='contacts')
     contact: Mapped["User"] = relationship('User', foreign_keys=[contact_id], back_populates='contact_of')
@@ -98,6 +98,10 @@ class Contact(Model):
     @hybrid_property
     def phone(self):
         return self.contact.phone
+    
+    __table_args__= (
+        UniqueConstraint('user_id','contact_id',name='unique_contact'),
+    )
 
 
 class User(Model):
