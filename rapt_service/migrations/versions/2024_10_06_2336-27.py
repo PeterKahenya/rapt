@@ -1,8 +1,8 @@
-"""create tables
+"""remake db
 
-Revision ID: 05518989234b
+Revision ID: f85cbffca5f5
 Revises: 
-Create Date: 2024-09-12 17:10:57.317162
+Create Date: 2024-10-06 23:36:27.359739
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '05518989234b'
+revision: str = 'f85cbffca5f5'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -50,7 +50,7 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
-    sa.Column('phone', sa.String(length=12), nullable=False),
+    sa.Column('phone', sa.String(length=15), nullable=False),
     sa.Column('phone_verification_code', sa.String(length=6), nullable=True),
     sa.Column('phone_verification_code_expiry_at', sa.DateTime(), nullable=True),
     sa.Column('device_fcm_token', sa.String(length=500), nullable=True),
@@ -102,6 +102,9 @@ def upgrade() -> None:
     op.create_table('contacts',
     sa.Column('user_id', sa.Uuid(), nullable=False),
     sa.Column('contact_id', sa.Uuid(), nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['contact_id'], ['users.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('user_id', 'contact_id')

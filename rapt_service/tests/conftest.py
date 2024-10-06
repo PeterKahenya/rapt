@@ -4,10 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import models
 from pydantic_settings import BaseSettings
 from faker import Faker
-from api import app
-from depends import get_db
 from fastapi.testclient import TestClient
-from init import initialize_db
 import config
 
 SessionLocal = None
@@ -102,6 +99,7 @@ def get_test_database_url():
     with engine.connect() as conn:
         conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {settings.test_database_name};"))
     FULL_URL = f"{URL_SAN_DB}/{settings.test_database_name}"
+    print(FULL_URL)
     return FULL_URL
 
 # swap the database url with the test database url in config
@@ -109,6 +107,10 @@ config.get_database_url = get_test_database_url
 engine = create_engine(get_test_database_url())
 models.Model.metadata.create_all(bind=engine)
 SessionLocal = sessionmaker(autocommit=False,autoflush=False,bind=engine)
+
+from api import app
+from depends import get_db
+from init import initialize_db
 
 @pytest.fixture(scope="session")
 def db():
@@ -120,6 +122,9 @@ def db():
     session.close()
     models.Model.metadata.drop_all(bind=engine)
     engine.dispose()
+    
+
+
     
 @pytest.fixture(scope="session")
 def client(db):
