@@ -5,7 +5,6 @@ import models
 from pydantic_settings import BaseSettings
 from faker import Faker
 from fastapi.testclient import TestClient
-from init import initialize_db
 import config
 
 SessionLocal = None
@@ -109,6 +108,10 @@ engine = create_engine(get_test_database_url())
 models.Model.metadata.create_all(bind=engine)
 SessionLocal = sessionmaker(autocommit=False,autoflush=False,bind=engine)
 
+from api import app
+from depends import get_db
+from init import initialize_db
+
 @pytest.fixture(scope="session")
 def db():
     session = SessionLocal(bind=engine)
@@ -120,8 +123,8 @@ def db():
     models.Model.metadata.drop_all(bind=engine)
     engine.dispose()
     
-from api import app
-from depends import get_db
+
+
     
 @pytest.fixture(scope="session")
 def client(db):
