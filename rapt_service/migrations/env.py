@@ -3,7 +3,9 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 from rapt_service.models import Model
-from rapt_service.config import DATABASE_URL
+from rapt_service.config import get_database_url
+
+DATABASE_URL = get_database_url()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
