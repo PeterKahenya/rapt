@@ -272,16 +272,16 @@ async def upload_contacts(
                         ) -> List[schemas.ContactInDBBase]:
     try:
         await crud.get_obj_or_404(db=db,model=models.User,id=user_id)
-        contacts_db = []
-        for contact in contacts:
-            contact.user_id = user_id
-            contact_db = await crud.create_contact(db=db,contact_create_data=contact)
-            contacts_db.append(contact_db)
-        return contacts_db
+        contacts_list = []
+        for contact_data in contacts:
+            contact_data.user_id = user_id
+            contact_db: models.Contact = await crud.create_contact(db=db,contact_create_data=contact_data)
+            contacts_list.append(contact_db)
+        return contacts_list
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise HTTPException(status_code=500,detail={
-            "message":"An unexpected error occurred {e}"
+            "message":f"An unexpected error occurred {e}"
         })
         
 # update contact

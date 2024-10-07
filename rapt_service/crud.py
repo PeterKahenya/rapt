@@ -159,18 +159,24 @@ async def update_user(db: Session, user_id: UUID4, user_update_data: schemas.Use
 # create contact
 async def create_contact(db: Session, contact_create_data: schemas.ContactCreate) -> models.Contact:
     logger.info(f"Creating contact with data: {contact_create_data.model_dump()}")
-    user_db: models.User = await get_obj_or_404(db=db,model=models.User,id=contact_create_data.user_id)
     contact_user = db.execute(select(models.User).where(models.User.phone == contact_create_data.phone)).scalar_one_or_none()
     if not contact_user:
         contact_user = models.User(phone=contact_create_data.phone, name=contact_create_data.name)
         db.add(contact_user)
         db.commit()
         db.refresh(contact_user)
-    contact = models.Contact(name=contact_create_data.name, user_id=user_db.id, contact_id=contact_user.id)
-    db.add(contact)
+    contact_db = db.execute(select(models.Contact)
+                            .where(models.Contact.contact_id == contact_user.id)
+                            .where(models.Contact.user_id == contact_create_data.user_id)
+                        ).scalar_one_or_none()
+    if not contact_db:
+        contact_db = models.Contact(name=contact_create_data.name, user_id=contact_create_data.user_id, contact_id=contact_user.id)
+        db.add(contact_db)
+    else:
+        contact_db.name = contact_create_data.name
     db.commit()
-    db.refresh(contact)
-    return contact
+    db.refresh(contact_db)
+    return contact_db
 
 # update contact
 async def update_contact(db: Session, contact_update_data: schemas.ContactUpdate) -> models.Contact:
