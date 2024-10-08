@@ -45,7 +45,13 @@ def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
     else:
         chatter_role = chatter_role_get[0]
     chatter_role.permissions.clear()
-    chatter_perm_codenames = ["read_users","update_users","create_chatrooms","read_chatrooms","update_chatrooms","delete_chatrooms","read_groups","update_groups","create_groups","delete_groups","read_chats","create_chats","delete_chats"]
+    chatter_perm_codenames = [
+        "read_users","update_users","create_users","delete_users",
+        "read_contacts","create_contacts","update_contacts","delete_contacts",
+        "create_chatrooms","read_chatrooms","update_chatrooms","delete_chatrooms",
+        "read_groups","update_groups","create_groups","delete_groups",
+        "read_chats","create_chats","delete_chats"
+    ]
     chatter_role_permissions = db.execute(select(models.Permission).where(models.Permission.codename.in_(chatter_perm_codenames))).scalars().all()
     for permission in chatter_role_permissions:
         chatter_role.permissions.append(permission)

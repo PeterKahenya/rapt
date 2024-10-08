@@ -110,7 +110,7 @@ async def check_permission(perm: str, user: models.User) -> models.User:
     elif await user.has_perm(perm):
         return user
     else:
-        raise HTTPException(status_code=403,detail={"message":"User not authorized to view this resource"})
+        raise HTTPException(status_code=403,detail={"message":"User not authorized to view perform this action"})
     
 def authorize(perm: str):
     async def _authorize(user: models.User = Depends(authenticate), db: Session = Depends(get_db)) -> models.User:
