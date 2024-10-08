@@ -9,23 +9,24 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import rapt.chat.raptandroid.data.model.Auth
-import rapt.chat.raptandroid.data.model.ChatRoom
 import rapt.chat.raptandroid.data.repository.AuthRepository
-import rapt.chat.raptandroid.data.repository.ChatsRepository
+import rapt.chat.raptandroid.data.repository.ChatRoomsRepository
+import rapt.chat.raptandroid.data.repository.DisplayChatRoom
+import rapt.chat.raptandroid.data.source.ChatRoom
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
 
 data class ChatRoomsState(
     val isLoading: Boolean = false,
-    val chatRooms: List<ChatRoom> = emptyList(),
+    val chatRooms: List<DisplayChatRoom> = emptyList(),
     val error: String? = null,
     val currentUser: Auth? = null
 )
 
 @HiltViewModel
 class ChatsViewModel @Inject constructor(
-    private val chatsRepository: ChatsRepository,
+    private val chatRoomsRepository: ChatRoomsRepository,
     private val authRepository: AuthRepository
 ): ViewModel() {
     private val _state = MutableStateFlow(ChatRoomsState())
@@ -37,15 +38,28 @@ class ChatsViewModel @Inject constructor(
                 _state.update {
                     it.copy(isLoading = true)
                 }
-                val chatRooms = chatsRepository.getChatRooms()
-                println("ChatRooms: $chatRooms")
-                val chatRoomsSockets = chatsRepository.connectToChatRooms(chatRooms)
-                println("ChatRoomsSockets: $chatRoomsSockets")
                 val currentUser = authRepository.auth()
                 println("CurrentUser: $currentUser")
                 _state.update {
-                    it.copy(chatRooms = chatRooms, isLoading = false, error = null, currentUser = currentUser)
+                    it.copy(currentUser = currentUser, error = null)
                 }
+                val dbChatRooms = chatRoomsRepository.getAllDBChatRooms()
+                println("DBChatRooms: $dbChatRooms")
+                _state.update {
+                    it.copy(chatRooms = dbChatRooms, error = null)
+                }
+                val apiChatRooms = chatRoomsRepository.getAllAPIChatRooms()
+                println("ApiChatRooms: $apiChatRooms")
+                for (apiChatRoom in apiChatRooms){
+                    chatRoomsRepository.saveChatRoom(apiChatRoom)
+                }
+                val dbChatRoomsUpdated = chatRoomsRepository.getAllDBChatRooms()
+                println("DBChatRoomsUpdated: $dbChatRoomsUpdated")
+                _state.update {
+                    it.copy(chatRooms = dbChatRoomsUpdated, isLoading = false, error = null)
+                }
+                val chatRooms = dbChatRoomsUpdated.map { chatRoom -> ChatRoom(chatRoomId = chatRoom.roomId) }
+                chatRoomsRepository.connectToChatRooms(chatRooms)
             } catch (e: HttpException) {
                 val error = "ChatRooms HttpException: ${e.response()} ${e.localizedMessage}"
                 println(error)

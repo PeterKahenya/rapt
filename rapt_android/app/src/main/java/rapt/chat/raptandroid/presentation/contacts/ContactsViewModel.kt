@@ -1,105 +1,79 @@
 package rapt.chat.raptandroid.presentation.contacts
 
 import android.content.Context
-import android.provider.ContactsContract
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import rapt.chat.raptandroid.data.model.Contact
-import rapt.chat.raptandroid.data.model.ProfileUpdateRequest
-import rapt.chat.raptandroid.data.repository.ProfileRepository
+import rapt.chat.raptandroid.data.model.APIContact
+import rapt.chat.raptandroid.data.repository.ContactsRepository
+import rapt.chat.raptandroid.data.source.Contact
+import retrofit2.HttpException
 import javax.inject.Inject
+
+data class ContactsState(
+    var contacts: List<Contact> = emptyList(),
+    var isLoading: Boolean = false,
+    var error: String? = null
+)
 
 @HiltViewModel
 class ContactsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val profileRepository: ProfileRepository
+    private val contactsRepository: ContactsRepository
 ) : ViewModel(){
-
-    private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
-    val contacts: StateFlow<List<Contact>> = _contacts
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+    private val _state = MutableStateFlow(ContactsState())
+    val state = _state.asStateFlow()
 
     init {
-        loadContacts()
-        uploadContacts()
+        syncContacts()
     }
 
-    private fun loadContacts() {
+    private fun syncContacts() {
         viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
             try {
-                _contacts.value = fetchLocalContacts()
+                _state.update {
+                    it.copy(isLoading = true, error = null)
+                }
+                val dbContacts = contactsRepository.getAllDBContacts()
+                println("dbContacts ${dbContacts.size}")
+                _state.update {
+                    it.copy(contacts = dbContacts, error = null)
+                }
+                val phoneContacts = contactsRepository.getPhoneContacts()
+                println("phoneContacts $phoneContacts")
+                val apiContacts = if (phoneContacts.isEmpty()){
+                    contactsRepository.apiFetchContacts()
+                }else{
+                    contactsRepository.uploadContacts(phoneContacts)
+                }
+                println("API Contacts: $apiContacts")
+                contactsRepository.saveContacts(apiContacts)
+                println("DB Contacts Saved")
+                val dbContactsUpdated = contactsRepository.getAllDBContacts()
+                println("DB Contacts Updated: ${dbContactsUpdated.size}")
+                _state.update {
+                    it.copy(contacts = dbContactsUpdated, isLoading = false, error = null)
+                }
+                println("Rapt Contacts synced")
+            } catch (e: HttpException) {
+                println("Failed to sync contacts: ${e.response()?.errorBody()?.string()}")
+                _state.value = ContactsState(error = e.localizedMessage, isLoading = false)
             } catch (e: Exception) {
-                _error.value = "Failed to load contacts: ${e.localizedMessage}"
+                println("Failed to sync contacts: ${e.localizedMessage}")
+                _state.update {
+                    it.copy(error = e.localizedMessage, isLoading = false)
+                }
             } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    private fun uploadContacts() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            try {
-                val profile = profileRepository.getProfile()
-                println("profile2: $profile")
-                val contacts = fetchLocalContacts()
-                val profileUpdateRequest = ProfileUpdateRequest(
-                    contacts = contacts
-                )
-                println("profileUpdateRequest: $profileUpdateRequest")
-                val updatedProfile = profileRepository.updateProfile(profile.id,profileUpdateRequest)
-                println("updatedProfile: $updatedProfile")
-                _contacts.value = updatedProfile.contacts
-            } catch (e: Exception) {
-                println("Failed to load contacts: ${e.localizedMessage}")
-                _error.value = "Failed to load contacts: ${e.localizedMessage}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-
-
-    private suspend fun fetchLocalContacts(): List<Contact> {
-            val contactsList = mutableListOf<Contact>()
-            val projection = arrayOf(
-                ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER
-            )
-            context.contentResolver.query(
-                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                projection,
-                null,
-                null,
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
-            )?.use { cursor ->
-                val idIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
-                val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-                val numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                if (idIndex != -1 && nameIndex != -1 && numberIndex != -1) {
-                    while (cursor.moveToNext()) {
-                        val id = cursor.getString(idIndex)
-                        val name = cursor.getString(nameIndex)
-                        val number = cursor.getString(numberIndex)
-                        contactsList.add(Contact(null,phone = number.filterNot { it.isWhitespace() }, name = name))
-                    }
+                _state.update {
+                    it.copy(isLoading = false, error = null)
                 }
             }
-            return contactsList
+        }
     }
 }

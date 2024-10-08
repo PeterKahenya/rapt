@@ -1,4 +1,4 @@
-package rapt.chat.raptandroid.presentation.chats
+package rapt.chat.raptandroid.presentation.contacts
 
 import android.content.Context
 import android.content.Intent
@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -16,12 +18,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FabPosition
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,66 +43,59 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import rapt.chat.raptandroid.ChatActivity
-import rapt.chat.raptandroid.ContactsActivity
-import rapt.chat.raptandroid.data.repository.DisplayChatRoom
 import rapt.chat.raptandroid.data.source.Contact
 import rapt.chat.raptandroid.presentation.ErrorText
 import rapt.chat.raptandroid.presentation.LoadingIndicator
+import rapt.chat.raptandroid.presentation.chats.ChatRoomItem
+import rapt.chat.raptandroid.presentation.profile.Avatar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatsScreen(viewModel: ChatsViewModel) {
-    val chatRoomsState by viewModel.state.collectAsStateWithLifecycle()
+fun ContactsScreen(viewModel: ContactsViewModel) {
+    val contactsState by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                context.startActivity(Intent(context, ContactsActivity::class.java))
-            }) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Add Chat")
-                    Text(text = "Add Chat")
-                }
-            }
-        },
-        floatingActionButtonPosition = FabPosition.Center,
+    println("ContactsState: ${contactsState.contacts.size}")
+    Scaffold (
         topBar = {
             TopAppBar(colors = topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                titleContentColor = MaterialTheme.colorScheme.primary,
-            ), title = {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = "apt.chat")
-                    if (chatRoomsState.isLoading) {
-                        LoadingIndicator()
-                    }else{
-                        IconButton(
-                            onClick = {}
-                        ) {
-                            Icon(Icons.Default.Search, contentDescription = "Add Chat")
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(text = "Contacts")
+                        if (contactsState.isLoading) {
+                            LoadingIndicator()
+                        }else{
+                            IconButton(
+                                onClick = {}
+                            ) {
+                                Icon(Icons.Default.Search, contentDescription = "Search Contact")
+                            }
                         }
                     }
-                }
-            })
+                })
         }
     ) {
-        if (chatRoomsState.error != null) {
-            ErrorText(chatRoomsState.error!!)
+        if (contactsState.error != null) {
+            ErrorText(contactsState.error!!)
         }
         Column(modifier = Modifier.padding(it).padding(16.dp)) {
-            if (chatRoomsState.chatRooms.isNotEmpty()) {
+            if (contactsState.contacts.isNotEmpty()) {
                 LazyColumn {
-                    items(chatRoomsState.chatRooms) { chatRoom ->
-                        println("Chatroom Room RawMembers: ${chatRoom.members}")
-                        val otherUsers = chatRoom.members.filter { it.phone != chatRoomsState.currentUser?.phone }
-                        ChatRoomItem(chatRoom, otherUsers, context)
+                    items(contactsState.contacts) { contact ->
+                        if (contact.isActive) {
+                            ContactItem(contact, context)
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                thickness = 0.5.dp,
+                                color = Color.Gray
+                            )
+                        }
                     }
                 }
             }
@@ -110,48 +104,40 @@ fun ChatsScreen(viewModel: ChatsViewModel) {
 }
 
 @Composable
-fun ChatRoomItem(chatRoom: DisplayChatRoom, members: List<Contact>, context: Context) {
-    println("Chatroom Room Chats: ${chatRoom.messages}")
-    println("Chatroom Room Members: $members")
-    Surface (
+fun ContactItem(contact: Contact, context: Context) {
+
+    Surface(
         modifier = Modifier.fillMaxWidth().background(Color.LightGray),
         onClick = {
-            // Navigate to chat screen
+            println("Selected Contact: $contact")
             val intent = Intent(context, ChatActivity::class.java)
-            intent.putExtra("contactId", members[0].contactId)
-            intent.putExtra("chatRoomId", chatRoom.roomId)
+            intent.putExtra("contactId", contact.contactId)
             context.startActivity(intent)
         }
     ) {
-        Column {
-            Row(
+            Row (
                 modifier = Modifier.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                ChatsListAvatar(members[0].name)
+                ContactAvatar(name = contact.name)
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        text = members[0].name,
+                        text = contact.name,
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        text = chatRoom.messages.lastOrNull()?.message ?: "...",
+                        text = contact.phone,
                         style = MaterialTheme.typography.bodySmall
                     )
-                    }
                 }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp), thickness = 0.5.dp, color = Color.Gray)
             }
-
-        }
-
     }
-
+}
 
 
 @Composable
-fun ChatsListAvatar(name: String) {
+fun ContactAvatar(name: String) {
     Surface(
         modifier = Modifier.size(50.dp),
         shape = CircleShape,
