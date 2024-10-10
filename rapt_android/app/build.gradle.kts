@@ -6,9 +6,15 @@ plugins {
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
     kotlin("plugin.serialization") version "1.9.0"
-}
+    id("androidx.room")
+    id("com.google.devtools.ksp")
+    alias(libs.plugins.compose.compiler)
 
+}
 android {
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
     namespace = "rapt.chat.raptandroid"
     compileSdk = 34
 
@@ -25,6 +31,7 @@ android {
         }
         val properties: Properties = Properties()
         properties.load(project.rootProject.file("local.properties").inputStream())
+        println(properties)
         buildConfigField(
             "String",
             "CLIENT_APP_ID",
@@ -103,7 +110,7 @@ dependencies {
     implementation(libs.ktor.client.websockets)
     implementation(libs.ktor.client.serialization)
     implementation(libs.ktor.client.logging)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation(libs.kotlinx.serialization.json)
     // dagger hilt dependency injection and kotlin annotation processing
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
@@ -114,6 +121,11 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.datastore.preferences)
+    // Room
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
 }
 
 // Allow references to generated code

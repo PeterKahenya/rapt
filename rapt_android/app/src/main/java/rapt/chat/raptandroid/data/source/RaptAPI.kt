@@ -3,6 +3,16 @@ package rapt.chat.raptandroid.data.source
 import rapt.chat.raptandroid.data.model.*
 import retrofit2.http.*
 
+data class APIContactUpload(
+    val phone: String,
+    val name: String
+)
+
+data class APIContactUpdate(
+    val name: String,
+    val contactId: String
+)
+
 interface RaptApi {
 
     @FormUrlEncoded
@@ -47,31 +57,55 @@ interface RaptApi {
         @Body profileUpdateRequest: ProfileUpdateRequest
     ): ProfileResponse
 
+    // get contacts
+    @GET("auth/users/{userId}/contacts")
+    suspend fun getContacts(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: String
+    ): List<APIContact>
+
+    // add contacts
+    @POST("auth/users/{userId}/contacts")
+    suspend fun addContacts(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: String,
+        @Body addContactsRequest: List<APIContactUpload>
+    ): List<APIContact>
+
+    // update contact
+    @PUT("auth/users/{userId}/contacts")
+    suspend fun updateContact(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: String,
+        @Body updateContactsRequest: List<APIContactUpdate>
+    ): List<APIContact>
+
     // get chat rooms
     @GET("chat/rooms")
-    suspend fun getChatRooms(@Header("Authorization") accessToken: String): List<ChatRoom>
+    suspend fun getChatRooms(@Header("Authorization") accessToken: String): List<APIChatRoom>
+
+    // create chat room
+    @POST("chat/rooms")
+    suspend fun createChatRoom(
+        @Header("Authorization") accessToken: String,
+        @Body chatRoomRequest: ChatRoomCreate
+    ): APIChatRoom
 
     // get chat room
     @GET("chat/rooms/{roomId}")
     suspend fun getChatRoom(
         @Path("roomId") roomId: String,
         @Header("Authorization") accessToken: String
-    ): ChatRoom
+    ): APIChatRoom
 
-    // create chat room
-    @POST("chat/rooms")
-    suspend fun createChatRoom(
-        @Header("Authorization") accessToken: String,
-        @Body chatRoomRequest: ChatRoomCreateRequest
-    ): ChatRoom
 
     // update chat room
     @PUT("chat/rooms/{roomId}")
     suspend fun updateChatRoom(
         @Path("roomId") roomId: String,
         @Header("Authorization") accessToken: String,
-        @Body chatRoomRequest: ChatRoomCreateRequest
-    ): ChatRoom
+        @Body chatRoomRequest: ChatRoomUpdate
+    ): APIChatRoom
 
     // delete chat room
     @DELETE("chat/rooms/{roomId}")

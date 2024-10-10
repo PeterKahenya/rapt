@@ -204,7 +204,8 @@ async def update_clientapp(db: Session, client_app_id: UUID4, client_app_update_
 
 # create chatroom
 async def create_chatroom(db: Session, chatroom_create_data: schemas.ChatRoomCreate) -> models.ChatRoom:
-    logger.info(f"Creating chatroom with data: {chatroom_create_data.model_dump()}")
+    logger.error(f"Creating chatroom with data: {chatroom_create_data.model_dump()}")
+    print(f"Creating chatroom with data: {chatroom_create_data.model_dump()}")
     members = []
     for user in chatroom_create_data.members:
         user_obj = await get_obj_or_404(db=db, model=models.User, id=user.id)
