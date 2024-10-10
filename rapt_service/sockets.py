@@ -66,7 +66,8 @@ class ConnectionManager:
 
     async def broadcast(self, message: SocketMessage, room: str):
         logger.error(f"Broadcasting message {message.type} to room {room}")
-        for _,connection in self.rooms.get(room, {}).items():
+        for id,connection in self.rooms.get(room, {}).items():
+            logger.error(f"Broadcasting message {message.type} to room {room} id {id} and connection {connection}")
             await connection.send_json(message.model_dump(mode="json"))
 
 manager = ConnectionManager()
