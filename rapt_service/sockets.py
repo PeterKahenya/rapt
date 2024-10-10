@@ -31,9 +31,16 @@ class ConnectionManager:
     
     def __init__(self):
         self.rooms: dict[str, dict[dict[str,WebSocket]]] = {}
+        """
+        {
+            "room_id": {
+                "user_id": websocket
+            }
+        }
+        """
 
     async def connect(self, websocket: WebSocket, room: str, user: models.User, db: models.Session):
-        logger.info(f"User {user.phone} has joined the chat")
+        logger.error(f"User {user.phone} has joined the chat")
         await websocket.accept()
         if room not in self.rooms:
             self.rooms[room] = {}
@@ -46,7 +53,7 @@ class ConnectionManager:
         await self.broadcast(socket_message, room) # always be broadcasting
 
     async def disconnect(self, websocket: WebSocket, room: str, user: models.User, db: models.Session):
-        logger.info(f"User {user.phone} has left the chat")
+        logger.error(f"User {user.phone} has left the chat")
         user.last_seen = datetime.datetime.now(tz=datetime.timezone.utc)
         db.commit()
         db.refresh(user)
@@ -58,7 +65,8 @@ class ConnectionManager:
         await self.broadcast(socket_message, room) # always be broadcasting        
 
     async def broadcast(self, message: SocketMessage, room: str):
-        for id,connection in self.rooms.get(room, {}).items():
+        logger.error(f"Broadcasting message {message} to room {room}")
+        for _,connection in self.rooms.get(room, {}).items():
             await connection.send_json(message.model_dump(mode="json"))
 
 manager = ConnectionManager()
@@ -72,7 +80,7 @@ async def chatsocket(
     try:
         # connection logic
         room: models.ChatRoom = await crud.get_obj_or_404(db,models.ChatRoom,room_id)
-        logger.info(f"User {user.phone} is trying to connect to room {room.to_dict()}")
+        logger.error(f"User {user.phone} is trying to connect to room {room.to_dict()}")
         if not room.is_member(user):
             logger.error(f"User {user.phone} is not a member of room {room_id}")
             await websocket.close()
@@ -80,9 +88,9 @@ async def chatsocket(
         # chat logic        
         while True:
             data = await websocket.receive_json()
-            logger.info(f"User {user.phone} sent a message {data}")
+            logger.error(f"User {user.phone} sent a message {data}")
             message = SocketMessage(**data)
-            logger.info(f"User {user.phone} sent a message {message}")
+            logger.error(f"User {user.phone} sent a message {message}")
             match message.type:
                 case MessageType.CHAT:
                     chat_create = schemas.ChatCreate(**message.obj, sender_id=user.id, room_id=room.id)

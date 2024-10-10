@@ -44,7 +44,9 @@ def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
         chatter_role = models.Role(name="Chatter",description="Chat User")
     else:
         chatter_role = chatter_role_get[0]
-    chatter_role.permissions.clear()
+        chatter_role.permissions.clear()
+        db.commit()
+        db.refresh(chatter_role)
     chatter_perm_codenames = [
         "read_users","update_users","create_users","delete_users",
         "read_contacts","create_contacts","update_contacts","delete_contacts",
