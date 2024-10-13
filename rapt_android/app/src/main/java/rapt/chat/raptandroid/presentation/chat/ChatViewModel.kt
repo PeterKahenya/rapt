@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import okio.IOException
+import rapt.chat.raptandroid.data.model.Auth
+import rapt.chat.raptandroid.data.repository.AuthRepository
 import rapt.chat.raptandroid.data.repository.ChatObj
 import rapt.chat.raptandroid.data.repository.ChatRepository
 import rapt.chat.raptandroid.data.repository.MessageType
@@ -31,20 +33,22 @@ import javax.inject.Inject
 
 data class ChatRoomState(
     val isLoading: Boolean = false,
+    val isSending: Boolean = false,
     val error: String? = null,
     val messages: MutableList<ChatMessage> = mutableListOf(),
-    val members: List<Contact> = emptyList()
+    val members: List<Contact> = emptyList(),
+    val currentUser: Auth? = null
 )
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
+
     private val _state = MutableStateFlow(ChatRoomState())
     val state = _state.asStateFlow()
-    private val _messages = MutableStateFlow<List<String>>(emptyList())
-    private val _messagesFlow = MutableSharedFlow<SocketMessage>()
-    val messages: SharedFlow<SocketMessage> = _messagesFlow.asSharedFlow()
+    private var activeRoomId: String? = null
 
     fun initializeChatRoom(contactId: String, roomId: String?) {
            /*
@@ -63,43 +67,48 @@ class ChatViewModel @Inject constructor(
                     _state.update {
                         it.copy(isLoading = true)
                     }
-                    var activeRoomId: String?
-                    if (roomId == null) {
-//                        println("roomId is null")
-                        activeRoomId = chatRepository.dbGetChatRoomByContactId(contactId)
-//                        println("activeRoomId: $activeRoomId")
-                        if (activeRoomId == null) {
+
+                    val auth = authRepository.auth()
+                    _state.update {
+                        it.copy(currentUser = auth)
+                    }
+                    activeRoomId = roomId ?: run {
+                        chatRepository.dbGetChatRoomByContactId(contactId) ?: run {
                             val chatRoom = chatRepository.createChatRoom(contactId)
                             chatRepository.dbSaveChatRoom(chatRoom)
-                            activeRoomId = chatRoom.id
+                            chatRoom.id
                         }
-                    }else {
-                        activeRoomId = roomId
                     }
-                    println("activeRoomId: $activeRoomId")
-                    val chatRoomMembers = chatRepository.dbGetChatRoomMembers(activeRoomId)
-                    println("chatRoomMembers: $chatRoomMembers")
+                    val chatRoomMembers = chatRepository.dbGetChatRoomMembers(activeRoomId!!)
                     _state.update {
                         it.copy(members = chatRoomMembers)
                     }
-                    val chatRoomMessages = chatRepository.dbGetChatRoomMessages(activeRoomId)
-                    println("chatRoomMessages: $chatRoomMessages")
+                    val chatRoomMessages = chatRepository.dbGetChatRoomMessages(activeRoomId!!)
                     _state.update {
                         it.copy(messages = chatRoomMessages)
                     }
-                    val chatSocket = chatRepository.connectToChatSocket(activeRoomId)
-                    localStartListening(chatSocket)
-                    chatRepository.listenToMessages(_messagesFlow)
                     _state.update {
                         it.copy(isLoading = false)
                     }
+                    chatRepository.connectToChatSocket(roomId = activeRoomId!!).collect { it ->
+                        println("ChatViewModel collect: $it")
+                        val updatedChatRoomMessages = chatRepository.dbGetChatRoomMessages(
+                            activeRoomId!!
+                        )
+                        _state.update {
+                            it.copy(messages = updatedChatRoomMessages)
+                        }
+                    }
+
                 } catch (e: IOException) {
                     val error = "initializeChatRoom IOException: ${e.localizedMessage ?: "Couldn't reach server. Check your internet connection"}"
                     println(error)
-                    _state.value = ChatRoomState(
-                                    isLoading = false,
-                                    error = error
-                    )
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            error = error
+                        )
+                    }
                 } catch (e: HttpException){
                     println("initializeChatRoom HttpException: ${e.response()} ${e.localizedMessage}")
                     _state.update {
@@ -110,52 +119,31 @@ class ChatViewModel @Inject constructor(
                     }
                 }
             }
-        }
-
-
-
-
-
-    private fun localStartListening(socket: WebSocketSession?) = CoroutineScope(Dispatchers.IO).launch {
-        try {
-            socket?.let { socket ->
-                for (frame in socket.incoming) {
-                    frame as? Frame.Text ?: continue
-                    val receivedText = frame.readText()
-                    Log.i("ChatClient", "Message: $receivedText")
-                    val json = Json { ignoreUnknownKeys = true }
-                    val socketMessage = json.decodeFromString<SocketMessage>(receivedText)
-                    Log.i("ChatClient", "Socket Message: $socketMessage")
-                    // save message to db
-                    val dbMessage = chatRepository.dbSaveChatMessage(socketMessage)
-                    // update state
-                    val currentMessages = state.value.messages
-                    currentMessages.add(dbMessage)
-                    _state.value = state.value.copy(messages = currentMessages)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("ChatClient", "Error while listening", e)
-        }
     }
-
-
-
 
     fun sendMessage(message: String) {
         viewModelScope.launch {
             try {
-                _state.value = ChatRoomState(isLoading = true)
-                val socketMessage = chatRepository.sendMessage(message)
-                val dbMessage = chatRepository.dbSaveChatMessage(socketMessage)
-                // update state
-                val currentMessages = state.value.messages
-                currentMessages.add(dbMessage)
-                _state.value = state.value.copy(messages = currentMessages, isLoading = false)
+                _state.update {
+                    it.copy(isSending = true)
+                }
+                val roomId = activeRoomId ?: throw Exception("Missing RoomID")
+                val chatMessage = chatRepository.sendMessage(roomId, message, MessageType.CHAT)
+                val updatedChatRoomMessages = chatRepository.dbGetChatRoomMessages(roomId)
+                _state.update {
+                    it.copy(messages = updatedChatRoomMessages, isSending = false)
+                }
             } catch (e: Exception) {
                 Log.e("ChatClient", "Error while sendingMessage", e)
             }
+        }
+    }
 
+    fun isMyMessage(message: ChatMessage): Boolean {
+        return if (_state.value.currentUser != null) {
+            message.isFromMe(_state.value.currentUser!!)
+        }else{
+            false
         }
     }
 

@@ -39,6 +39,7 @@ fun LoginScreen(
 
     val loginState by viewModel.state.collectAsStateWithLifecycle()
     val phone: MutableState<String> = remember { mutableStateOf("") }
+    val isPhoneNumberValid: MutableState<Boolean> = remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Column(
@@ -70,6 +71,7 @@ fun LoginScreen(
             value = phone.value,
             onValueChange = {
                 phone.value = it
+                isPhoneNumberValid.value = viewModel.isValidPhoneNumber(it)
             },
             placeholder = { Text(text = "254 712 345 678") },
             label = { Text(text = "Phone Number") },
@@ -90,6 +92,7 @@ fun LoginScreen(
                 .padding(top = 100.dp)
                 .align(Alignment.End)
                 .width(150.dp),
+            enabled = isPhoneNumberValid.value
         ) {
             Text(text = "Next")
         }

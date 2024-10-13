@@ -15,14 +15,14 @@ class ChatActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val contactId = intent.getStringExtra("contactId")
-        val roomId = intent.getStringExtra("roomId")
-        println("ChatActivity contactId: $contactId roomId: ${roomId?: "null"}")
+        val chatRoomId = intent.getStringExtra("chatRoomId")
+        println("ChatActivity contactId: $contactId chatRoomId: ${chatRoomId?: "null"}")
         setContent {
             RaptTheme {
                 val chatViewModel: ChatViewModel = hiltViewModel<ChatViewModel>()
                 if (contactId != null) {
-                    chatViewModel.initializeChatRoom(contactId, roomId)
-                    ChatScreen(contactId, chatViewModel)
+                    chatViewModel.initializeChatRoom(contactId, chatRoomId)
+                    ChatScreen(chatViewModel)
                 } else {
                     Text(text = "Invalid Contact ID")
                 }

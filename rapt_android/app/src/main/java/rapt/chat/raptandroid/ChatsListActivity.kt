@@ -21,6 +21,7 @@ class ChatsListActivity : ComponentActivity() {
         // TODO ask for permission to receive notifications
         // TODO ask for permission to read SMS messages for OTP verification
         requestPermission()
+        Log.i("ChatsListActivity", "onCreate")
         setContent {
             RaptTheme {
                 val chatsViewModel = hiltViewModel<ChatsViewModel>()

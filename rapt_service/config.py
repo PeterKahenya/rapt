@@ -24,11 +24,15 @@ class AppSettings(BaseSettings):
     
 settings = AppSettings()
 
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
 hb_handler = HoneybadgerHandler(api_key=settings.honeybadger_api_key)
 hb_handler.setLevel(logging.DEBUG)
 hb_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger = logging.getLogger('honeybadger')
-logger.addHandler(hb_handler)
+logger.addHandler(handler)
 
 
 def get_database_url():

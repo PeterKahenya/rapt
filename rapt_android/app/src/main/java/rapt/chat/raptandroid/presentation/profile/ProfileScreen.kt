@@ -76,7 +76,9 @@ fun ProfileContent(profile: ProfileResponse, profileViewModel: ProfileViewModel)
     Button(onClick = {
         profileViewModel.updateProfile(profile.id, name.value, null)
         profileViewModel.getProfile()
-    }) {
+    },
+        enabled = name.value != profile.name && name.value != ""
+    ) {
         Text("Update Profile")
     }
     Spacer(modifier = Modifier.height(8.dp))

@@ -1,6 +1,7 @@
 package rapt.chat.raptandroid
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,7 +17,7 @@ class VerifyActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val phone = intent.getStringExtra("phone")
-        println("VerifyActivity Phone Number: $phone")
+        Log.i("VerifyActivity","Phone Number: $phone")
         setContent {
             RaptTheme {
                 val viewModel = hiltViewModel<VerifyViewModel>()

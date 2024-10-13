@@ -22,19 +22,15 @@ class AuthRepositoryImpl @Inject constructor(
 ): AuthRepository {
 
     override suspend fun auth(): Auth? {
-        println("AuthRepositoryImpl Auth")
+//        println("Auth")
         val localAuth = ds.getAuth()
-        println("AuthRepositoryImpl LocalAuth: $localAuth")
         if (localAuth != null){
-            println("AuthRepositoryImpl LocalAuth found, refreshing token")
             if (localAuth.isExpired()){
-                println("AuthRepositoryImpl LocalAuth expired, refreshing token")
                 val refreshResponse = refresh(
                     accessToken = localAuth.accessToken,
                     clientId = Constants.CLIENT_APP_ID,
                     clientSecret = Constants.CLIENT_APP_SECRET
                 )
-                println("AuthRepositoryImpl LocalAuth refreshed: $refreshResponse")
                 val profileResponse = api.getProfile("Bearer ${refreshResponse.accessToken}")
                 val newAuth = Auth(
                     accessToken = refreshResponse.accessToken,
@@ -45,11 +41,9 @@ class AuthRepositoryImpl @Inject constructor(
                 ds.saveAuth(newAuth)
                 return newAuth
             }else{
-                println("AuthRepositoryImpl LocalAuth not expired")
                 return localAuth
             }
         }else{
-            println("AuthRepositoryImpl No LocalAuth, you may want to redirect to login screen")
             return null
         }
     }

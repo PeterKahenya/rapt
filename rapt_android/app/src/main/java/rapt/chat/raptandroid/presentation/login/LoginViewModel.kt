@@ -1,5 +1,6 @@
 package rapt.chat.raptandroid.presentation.login
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,29 +40,31 @@ class LoginViewModel @Inject constructor(
                     clientId = Constants.CLIENT_APP_ID,
                     clientSecret = Constants.CLIENT_APP_SECRET
                 )
-                println("LoginResponse: $loginResponse")
+                Log.i("LoginViewModel", "login loginResponse: $loginResponse")
                 _state.update {
                     it.copy(loginResponse = loginResponse, isLoading = false, error = null)
                 }
             } catch (e: HttpException) {
                 val error = "Login HttpException: ${e.response()} ${e.localizedMessage}"
-                println(error)
                 _state.update {
                     it.copy(loginResponse = null, isLoading = false, error = error)
                 }
             } catch (e: IOException) {
                 val error = "Login IOException: ${e.localizedMessage ?: "Couldn't reach server. Check your internet connection"}"
-                println(error)
                 _state.update {
                     it.copy(loginResponse = null, isLoading = false, error = error)
                 }
             }catch (e: java.lang.SecurityException){
                 val error = "Login SecurityException: ${e.localizedMessage ?: "Unexpected error"}"
-                println(error)
                 _state.update {
                     it.copy(loginResponse = null, isLoading = false, error = error)
                 }
             }
         }
+    }
+
+    fun isValidPhoneNumber(phoneNumber: String): Boolean {
+        val phoneRegex = "^\\+?[1-9]\\d{11,14}$".toRegex()
+        return phoneNumber.matches(phoneRegex)
     }
 }

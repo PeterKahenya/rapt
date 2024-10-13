@@ -2,6 +2,7 @@ package rapt.chat.raptandroid.di
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.room.Room
 import dagger.Module
@@ -9,7 +10,12 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.websocket.WebSockets
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Response
 import rapt.chat.raptandroid.common.Constants
 import rapt.chat.raptandroid.data.repository.AuthRepository
 import rapt.chat.raptandroid.data.repository.AuthRepositoryImpl
@@ -34,6 +40,16 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.time.Duration
 import javax.inject.Singleton
 
+class LoggingInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request()
+        Log.d("RaptNetworkCall:", "Request: ${request.method()} ${request.url()} ${request.headers()} ${request.body()}")
+        val response = chain.proceed(request)
+        Log.d("RaptNetworkCall:", "Response: ${response.code()} ${response.message()} ${response.headers()} ${response.body().toString()}")
+        return response
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -42,7 +58,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideRaptApi(): RaptApi {
+        val loggingInterceptor = LoggingInterceptor()
         val okHttpClient: OkHttpClient = OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
             .connectTimeout(Duration.ofSeconds(30))
             .writeTimeout(Duration.ofSeconds(30))
             .readTimeout(Duration.ofSeconds(30))
@@ -64,7 +82,9 @@ object AppModule {
     @Provides
     @Singleton
     fun providesRaptDataBase(@ApplicationContext context: Context): RaptDatabase {
-        return Room.databaseBuilder(context, RaptDatabase::class.java, "rapt_db").build()
+        return Room.databaseBuilder(context, RaptDatabase::class.java, "rapt_db")
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
@@ -137,7 +157,13 @@ object AppModule {
     @Provides
     @Singleton
     fun provideChatSocketClient(authRepository: AuthRepository): RaptSocketClient {
-        return RaptSocketClient(authRepository)
+        val client = HttpClient(CIO) {
+            install(WebSockets){
+//                pingInterval = 60000
+                maxFrameSize = Long.MAX_VALUE
+            }
+        }
+        return RaptSocketClient(authRepository,client)
     }
 
 }

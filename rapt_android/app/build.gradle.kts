@@ -47,6 +47,11 @@ android {
             "API_BASE_URL",
             "\"${properties.getProperty("API_BASE_URL")}\""
         )
+        buildConfigField(
+            "String",
+            "SOCKET_BASE_URL",
+            "\"${properties.getProperty("SOCKET_BASE_URL")}\""
+        )
     }
 
     buildTypes {

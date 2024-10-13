@@ -1,8 +1,5 @@
 package rapt.chat.raptandroid.data.repository
 
-import android.provider.ContactsContract.CommonDataKinds.Phone
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import rapt.chat.raptandroid.data.model.APIContact
 import rapt.chat.raptandroid.data.source.APIContactUpload
 import rapt.chat.raptandroid.data.source.Contact
@@ -15,7 +12,7 @@ import javax.inject.Inject
 interface ContactsRepository{
     suspend fun getAllDBContacts(): List<Contact>
     suspend fun getPhoneContacts(): List<PhoneContact>
-    suspend fun uploadContacts(contacts: List<PhoneContact>): List<APIContact>
+    suspend fun uploadPhoneContacts(phoneContacts: List<PhoneContact>): List<APIContact>
     suspend fun saveContacts(contacts: List<APIContact>)
     suspend fun searchContacts(query: String): List<Contact>
     suspend fun deleteContact(contact: Contact)
@@ -37,52 +34,40 @@ class ContactsRepositoryImpl @Inject constructor(
         return contentProvider.getContacts()
     }
 
-    override suspend fun uploadContacts(contacts: List<PhoneContact>): List<APIContact> {
-        val auth = authRepository.auth()
-
-
-        if (auth != null){
-            val apiRequestContacts = mutableListOf<APIContactUpload>()
-            for (contact in contacts){
-                if (contact.phone != auth.phone){
-                    apiRequestContacts.add(
-                        APIContactUpload(
-                            name = contact.name,
-                            phone = contact.phone
-                        )
-                    )
-                }
+    override suspend fun uploadPhoneContacts(phoneContacts: List<PhoneContact>): List<APIContact> {
+        val auth = authRepository.auth() ?: throw Exception("No Auth")
+        val apiRequestContacts = mutableListOf<APIContactUpload>()
+        for (phoneContact in phoneContacts){
+            if (phoneContact.phone != auth.phone){
+                apiRequestContacts.add(
+                    APIContactUpload(name = phoneContact.name, phone = phoneContact.phone)
+                )
             }
-            println("UserId: ${auth.userId}")
-            println("Uploading contacts: $apiRequestContacts")
-            return api.addContacts(
-                accessToken = "Bearer ${auth.accessToken}",
-                userId = auth.userId,
-                addContactsRequest = apiRequestContacts
-            )
-        } else {
-            throw Exception("No auth")
         }
+        return api.addContacts(
+            accessToken = "Bearer ${auth.accessToken}",
+            userId = auth.userId,
+            addContactsRequest = apiRequestContacts
+        )
     }
+
     override suspend fun saveContacts(contacts: List<APIContact>) {
         for (apiContact in contacts){
             val dbContact = contactDao.getByPhone(apiContact.phone)
-            if (dbContact.isEmpty()){
+            if (dbContact != null){
+                dbContact.isActive = apiContact.isActive
+                dbContact.name = apiContact.name
+                dbContact.contactId = apiContact.contactId
+                contactDao.update(dbContact)
+            } else {
                 contactDao.insert(
                     Contact(
                         name = apiContact.name,
                         phone = apiContact.phone,
                         contactId = apiContact.contactId,
-                        userId = apiContact.userId,
                         isActive = apiContact.isActive
                     )
                 )
-            }else{
-                dbContact[0].isActive = apiContact.isActive
-                dbContact[0].name = apiContact.name
-                dbContact[0].userId = apiContact.userId
-                dbContact[0].contactId = apiContact.contactId
-                contactDao.update(dbContact[0])
             }
         }
     }
@@ -95,14 +80,10 @@ class ContactsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun apiFetchContacts(): List<APIContact> {
-        val auth = authRepository.auth()
-        if (auth != null){
-            return api.getContacts(
-                accessToken = "Bearer ${auth.accessToken}",
-                userId = auth.userId,
-                )
-        } else {
-            throw Exception("No auth")
-        }
+        val auth = authRepository.auth() ?: throw Exception("No Auth")
+        return api.getContacts(
+            accessToken = "Bearer ${auth.accessToken}",
+            userId = auth.userId
+        )
     }
 }

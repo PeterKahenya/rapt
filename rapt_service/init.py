@@ -85,7 +85,9 @@ def initialize_db(db: Session, settings: BaseSettings, is_test: bool = False):
             Client ID: {clientapp.client_id}
             Client Secret: {clientapp.client_secret}
         """
-        utils.mailtrap_send_email(to=("kahenya0@gmail.com","System Admin"),subject="RaptChat Superuser Credentials",message=client_credentials_email)
+        # utils.mailtrap_send_email(to=("kahenya0@gmail.com","System Admin"),subject="RaptChat Superuser Credentials",message=client_credentials_email)
+        print(clientapp.client_id)
+        print(clientapp.client_secret)
     
     
 

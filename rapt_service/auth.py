@@ -21,7 +21,8 @@ async def login(db: Session = Depends(get_db), user: models.User = Depends(get_o
     try:
         user = await user.create_verification_code(db=db,code_length=settings.verification_code_length,code_expiry_seconds=settings.verification_code_expiry_seconds)
         message = f"Your rapt verification code is {user.phone_verification_code} please enter it to verify your phone number"
-        await utils.smsleopard_send_sms(phone=user.phone, message=message)
+        # await utils.smsleopard_send_sms(phone=user.phone, message=message)
+        print(message)
         return {"message":"SMS verification code sent", "success":True, "phone":user.phone}
     except Exception as e:
         logger.error(f"Login Error: {str(e)}")

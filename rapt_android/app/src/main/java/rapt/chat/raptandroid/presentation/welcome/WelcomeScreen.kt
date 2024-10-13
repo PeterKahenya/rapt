@@ -1,6 +1,7 @@
 package rapt.chat.raptandroid.presentation.welcome
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -41,10 +42,10 @@ fun WelcomeScreen(viewModel: WelcomeViewModel){
         ErrorText(authStatus.error!!)
     }
     if (authStatus.isAuthenticated){
-        println("Authenticated")
+        Log.i("WelcomeScreen", "Authenticated, starting ChatsListActivity")
         LocalContext.current.startActivity(Intent(LocalContext.current, ChatsListActivity::class.java))
     } else {
-        println("Not Authenticated")
+        Log.i("WelcomeScreen", "Not authenticated, showing WelcomeContent")
         WelcomeContent()
     }
 }

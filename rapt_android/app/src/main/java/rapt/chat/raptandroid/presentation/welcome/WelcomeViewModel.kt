@@ -1,5 +1,6 @@
 package rapt.chat.raptandroid.presentation.welcome
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,30 +26,30 @@ class WelcomeViewModel @Inject constructor(
     val isAuthenticated: StateFlow<AuthState> = _isAuthenticated.asStateFlow()
 
     init {
-        println("WelcomeViewModel")
+        Log.i("WelcomeViewModel", "init")
         checkAuth()
     }
 
     private fun checkAuth(){
-        println("checkAuth")
+        Log.i("WelcomeViewModel", "checkAuth")
         viewModelScope.launch {
             try {
                 _isAuthenticated.update {
                     it.copy(isLoading = true, isAuthenticated = false, error = null)
                 }
                 val auth = authRepository.auth()
+                Log.d("WelcomeViewModel", "checkAuth: auth: $auth")
                 if (auth != null) {
                     _isAuthenticated.update {
                         it.copy(isAuthenticated = true, isLoading = false, error = null)
                     }
                 } else {
-                    println("checkAuth: auth is null, you may want to redirect to login screen")
                     _isAuthenticated.update {
                         it.copy(isAuthenticated = false, isLoading = false, error = null)
                     }
                 }
             } catch (e: Exception) {
-                println("checkAuth: exception: ${e.message}")
+                Log.e("WelcomeViewModel", "checkAuth: ${e.localizedMessage}")
                 _isAuthenticated.update {
                     it.copy(isAuthenticated = false, isLoading = false, error = e.localizedMessage)
                 }

@@ -2,81 +2,111 @@ package rapt.chat.raptandroid.data.source
 
 import android.util.Log
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.url
 import io.ktor.websocket.Frame
-import io.ktor.websocket.WebSocketSession
 import io.ktor.websocket.close
+import io.ktor.websocket.readReason
 import io.ktor.websocket.readText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import rapt.chat.raptandroid.data.repository.AuthRepository
 import rapt.chat.raptandroid.data.repository.SocketMessage
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 class RaptSocketClient @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val httpClient: HttpClient
 ) {
-    private val client = HttpClient(CIO) {
-        install(WebSockets)
-    }
-    private var socket: WebSocketSession? = null
 
-//    private val _messages = MutableSharedFlow<Message>()
-//    val messages: SharedFlow<Message> = _messages.asSharedFlow()
+    private var socketSession: DefaultClientWebSocketSession? = null
+    private var job: Job? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val messageChannel = Channel<SocketMessage>()
+    private val reconnectInterval = 50000L // 50 seconds
 
-    suspend fun connect(serverUrl: String): WebSocketSession {
-        try {
-            println("Socket Connecting to $serverUrl")
-            val auth = authRepository.auth()
-            socket = client.webSocketSession {
-                url(serverUrl)
-                headers.append("Authorization", "Bearer ${auth?.accessToken}")
+    suspend fun connect(serverUrl: String): Flow<SocketMessage> = flow {
+        while (true){
+            try {
+                Log.d("RaptSocketClient:", "Connecting to $serverUrl")
+                val auth = authRepository.auth()
+                socketSession = httpClient.webSocketSession {
+                    url(serverUrl)
+                    headers.append("Authorization", "Bearer ${auth?.accessToken}")
+                }
+                Log.d("RaptSocketClient:", "Connected to $serverUrl")
+                job = coroutineScope.launch {
+                    launch { listenForMessages() }
+                }
+                println("Listening for messages")
+                messageChannel.consumeEach { message ->
+                    println("Received message: $message")
+                    emit(message)
+                }
+            } catch (e: Exception) {
+                Log.e("RaptSocketClient:", "Error in WebSocket connection ${e.message}", e)
+                delay(reconnectInterval)
+                Log.d("RaptSocketClient:", "Attempting to reconnect...")
+            } finally {
+                job?.cancelAndJoin()
+                socketSession?.close()
             }
-            Log.d("ChatClient", "Connected to $serverUrl")
-            println("ChatClient Connected to $serverUrl")
-            return socket!!
-        } catch (e: Exception) {
-            Log.e("ChatClient", "Error connecting to $serverUrl", e)
-            throw e
         }
     }
 
-    fun startListening(messagesFlow: MutableSharedFlow<SocketMessage>) = CoroutineScope(Dispatchers.IO).launch {
+    private suspend fun listenForMessages() {
+        println("listenForMessages")
         try {
-            socket?.let { socket ->
-                for (frame in socket.incoming) {
-                    frame as? Frame.Text ?: continue
-                    val receivedText = frame.readText()
-                    println("ChatClient Received message: $receivedText")
-                    Log.i("ChatClient", "Message: $receivedText")
-                    val json = Json { ignoreUnknownKeys = true }
-                    val chatMessage = json.decodeFromString<SocketMessage>(receivedText)
-                    println("ChatClient Message: $chatMessage")
-                    messagesFlow.emit(chatMessage)
+            socketSession?.incoming?.consumeEach { frame ->
+                when (frame) {
+                    is Frame.Text -> {
+                        val receivedText = frame.readText()
+                        Log.d("RaptSocketClient", "Received raw message: $receivedText")
+                        val json = Json { ignoreUnknownKeys = true }
+                        val chatMessage = json.decodeFromString<SocketMessage>(receivedText)
+                        Log.i("RaptSocketClient", "Received parsed message: $chatMessage")
+                        messageChannel.send(chatMessage)
+                    }
+                    is Frame.Close -> {
+                        Log.w("RaptSocketClient", "WebSocket closed with reason: ${frame.readReason()}")
+                        throw CancellationException("WebSocket closed")
+                    }
+                    else -> Log.d("RaptSocketClient", "Received frame: $frame")
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Log.e("ChatClient", "Error while listening", e)
+            Log.e("RaptSocketClient:", "Error in message listener", e)
         }
     }
 
-    suspend fun sendMessage(message: String) {
+    suspend fun sendMessage(socketMessage: SocketMessage) {
         try {
-            socket?.send(Frame.Text(message))
+            val json = Json { ignoreUnknownKeys = true }
+            val socketMessageString = json.encodeToString(socketMessage)
+            socketSession?.send(Frame.Text(socketMessageString))
         } catch (e: Exception) {
-            Log.e("ChatClient", "Error sending message", e)
+            Log.e("RaptSocketClient:", "Error sending message", e)
         }
     }
 
     suspend fun disconnect() {
-        socket?.close()
-        client.close()
-        Log.d("ChatClient", "Disconnected")
+        socketSession?.close()
+        httpClient.close()
+        Log.d("RaptSocketClient:", "Disconnected")
     }
 }

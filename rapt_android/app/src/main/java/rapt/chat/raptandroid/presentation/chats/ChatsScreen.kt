@@ -17,8 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
@@ -43,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import rapt.chat.raptandroid.ChatActivity
 import rapt.chat.raptandroid.ContactsActivity
+import rapt.chat.raptandroid.ProfileActivity
 import rapt.chat.raptandroid.data.repository.DisplayChatRoom
 import rapt.chat.raptandroid.data.source.Contact
 import rapt.chat.raptandroid.presentation.ErrorText
@@ -83,9 +83,12 @@ fun ChatsScreen(viewModel: ChatsViewModel) {
                         LoadingIndicator()
                     }else{
                         IconButton(
-                            onClick = {}
+                            onClick = {
+                                val intent = Intent(context, ProfileActivity::class.java)
+                                context.startActivity(intent)
+                            }
                         ) {
-                            Icon(Icons.Default.Search, contentDescription = "Add Chat")
+                            Icon(Icons.Default.Person, contentDescription = "View Profile")
                         }
                     }
                 }
@@ -99,7 +102,6 @@ fun ChatsScreen(viewModel: ChatsViewModel) {
             if (chatRoomsState.chatRooms.isNotEmpty()) {
                 LazyColumn {
                     items(chatRoomsState.chatRooms) { chatRoom ->
-                        println("Chatroom Room RawMembers: ${chatRoom.members}")
                         val otherUsers = chatRoom.members.filter { it.phone != chatRoomsState.currentUser?.phone }
                         ChatRoomItem(chatRoom, otherUsers, context)
                     }

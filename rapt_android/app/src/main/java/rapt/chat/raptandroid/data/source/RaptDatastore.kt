@@ -34,7 +34,7 @@ class RaptDataStoreImpl(val context: Context): RaptDataStore {
     override suspend fun getAuth(): Auth? {
         try {
             val accessToken: Auth? = context.dataStore.data.map { preferences ->
-                println("getAuth: $preferences")
+//                println("getAuth: $preferences")
                 if (
                     preferences[accessTokenKey] == null ||
                     preferences[phoneKey] == null ||

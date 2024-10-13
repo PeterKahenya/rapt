@@ -9,6 +9,7 @@ import sockets
 from honeybadger import honeybadger
 from config import settings
 import models
+from fastapi.middleware.cors import CORSMiddleware
 
 fastapi_config = {
     "title":"RaptChat Service",
@@ -30,10 +31,16 @@ async def chatsocket_wrapper(
     try:
         await sockets.chatsocket(websocket, room_id, user=user, db=db)
     except Exception as e:
+        print(e)
         honeybadger.notify(e)
         raise
-app.add_api_websocket_route("/chatsocket/{room_id}",chatsocket_wrapper)
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to be more specific in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
     honeybadger.context(
@@ -44,6 +51,10 @@ async def add_process_time_header(request: Request, call_next):
     )
     response = await call_next(request)
     return response
+app.add_api_websocket_route("/chatsocket/{room_id}",chatsocket_wrapper)
+
+
+
 
 
 if __name__ == "__main__":

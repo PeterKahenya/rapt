@@ -10,6 +10,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.Update
+import rapt.chat.raptandroid.data.model.Auth
 
 /*
     One Contact Many ChatRooms but we handle one for now
@@ -24,13 +25,14 @@ data class Contact(
     @ColumnInfo(name = "name") var name: String,
     @ColumnInfo(name = "phone") val phone: String,
     @ColumnInfo(name = "contact_id") var contactId: String,
-    @ColumnInfo(name = "user_id") var userId: String,
     @ColumnInfo(name = "is_active") var isActive: Boolean
 )
 
 @Entity
 data class ChatRoom(
-    @PrimaryKey @ColumnInfo(name = "chatroom_id") val chatRoomId: String
+    @PrimaryKey
+    @ColumnInfo(name = "chatroom_id")
+    val chatRoomId: String
 )
 
 @Entity
@@ -42,14 +44,22 @@ data class ChatRoomMember(
 
 @Entity
 data class ChatMessage(
-    @PrimaryKey val id: String,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @ColumnInfo(name = "chat_id") var chatId: String = "",
     @ColumnInfo(name = "message") val message: String,
     @ColumnInfo(name = "sender_id") val senderId: String,
     @ColumnInfo(name = "chatroom_id") val chatRoomId: String,
-    @ColumnInfo(name = "is_read") val isRead: Boolean,
-    @ColumnInfo(name = "timestamp") val timestamp: Long
+    @ColumnInfo(name = "is_read") var isRead: Boolean,
+    @ColumnInfo(name = "timestamp") val timestamp: Long,
+    @ColumnInfo(name = "type") val type: String = "text",
+    @ColumnInfo(name = "status") var status: String = "sent",
+    @ColumnInfo(name = "message_id") val messageId: String
     /* TODO add support for media */
-)
+){
+    fun isFromMe(auth: Auth): Boolean{
+        return senderId == auth.userId
+    }
+}
 
 /* DAOs */
 @Dao
@@ -58,8 +68,8 @@ interface ContactDao{
     @Query("SELECT * FROM contact")
     suspend fun getAll(): List<Contact>
 
-    @Query("SELECT * FROM contact WHERE phone = :phone")
-    suspend fun getByPhone(phone: String): List<Contact>
+    @Query("SELECT * FROM contact WHERE phone = :phone LIMIT 1")
+    suspend fun getByPhone(phone: String): Contact?
 
     @Query("SELECT * FROM contact WHERE contact_id = :contactId")
     suspend fun getByContactId(contactId: String): List<Contact>
@@ -102,7 +112,7 @@ interface ChatRoomDao{
     @Query("SELECT chatroommember.contact_id FROM chatroommember WHERE chatroommember.chatroom_id = :chatRoomId")
     suspend fun getChatRoomMembers(chatRoomId: String): List<String>
 
-    @Query("SELECT * FROM chatmessage WHERE chatmessage.chatroom_id = :chatRoomId")
+    @Query("SELECT * FROM chatmessage WHERE chatmessage.chatroom_id = :chatRoomId ORDER BY chatmessage.timestamp ASC")
     suspend fun getChatRoomMessages(chatRoomId: String): MutableList<ChatMessage>
 
     @Delete
@@ -111,14 +121,34 @@ interface ChatRoomDao{
     @Insert
     suspend fun insertChatMessage(chatMessage: ChatMessage)
 
-    @Query("SELECT * FROM chatmessage WHERE chatmessage.id = :chatId")
-    suspend fun getMessageById(chatId: String): ChatMessage?
+    @Update
+    suspend fun updateChatMessage(chatMessage: ChatMessage)
+
+    @Query("SELECT * FROM chatmessage WHERE chatmessage.message_id = :messageId LIMIT 1")
+    suspend fun getMessageById(messageId: String): ChatMessage?
+
+    @Query("SELECT * FROM chatmessage WHERE " +
+            "chatmessage.chatroom_id = :chatRoomId AND " +
+            "chatmessage.sender_id = :senderId")
+    suspend fun getMessagesBySenderAndChatRoom(chatRoomId: String, senderId: String): List<ChatMessage>
+
+
+    @Query("SELECT * FROM chatmessage WHERE " +
+            "chatmessage.chat_id = :chatId LIMIT 1"
+    )
+    suspend fun getMessageByChatId(chatId: String): ChatMessage?
+
+    @Query("SELECT * FROM chatroommember WHERE chatroommember.contact_id = :contactId AND chatroommember.chatroom_id = :chatRoomId LIMIT 1")
+    suspend fun getMembersByRoomAndContact(contactId: String, chatRoomId: String): ChatRoomMember?
 
 }
 
 /* Database */
 
-@Database(entities = [Contact::class, ChatRoom::class, ChatMessage::class, ChatRoomMember::class], version = 1)
+@Database(
+    entities = [Contact::class, ChatRoom::class, ChatMessage::class, ChatRoomMember::class],
+    version = 5
+)
 abstract class RaptDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao
     abstract fun chatRoomDao(): ChatRoomDao

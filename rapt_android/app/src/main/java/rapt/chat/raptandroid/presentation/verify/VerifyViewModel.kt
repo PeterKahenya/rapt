@@ -1,5 +1,6 @@
 package rapt.chat.raptandroid.presentation.verify
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,13 +42,12 @@ class VerifyViewModel @Inject constructor(
                     clientId = Constants.CLIENT_APP_ID,
                     clientSecret = Constants.CLIENT_APP_SECRET
                 )
-                println("VerifyPhoneResponse: $verifyResponse")
+                Log.d("VerifyViewModel","VerifyPhoneResponse: $verifyResponse")
                 _state.update {
                     it.copy(verifyResponse = verifyResponse, isLoading = false, error = null)
                 }
             } catch (e: HttpException) {
                 val error = "Verify HttpException: ${e.response()} ${e.localizedMessage}"
-                println(error)
                 _state.update {
                     it.copy(verifyResponse = null, isLoading = false, error = error)
                 }
@@ -59,7 +59,6 @@ class VerifyViewModel @Inject constructor(
                 }
             }catch (e: java.lang.SecurityException){
                 val error = "Verify SecurityException: ${e.localizedMessage ?: "Unexpected error"}"
-                println(error)
                 _state.update {
                     it.copy(verifyResponse = null, isLoading = false, error = error)
                 }

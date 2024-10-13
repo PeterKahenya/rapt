@@ -1,8 +1,10 @@
 package rapt.chat.raptandroid.presentation.verify
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -86,7 +88,13 @@ fun VerifyScreen(
         if (verifyState.error != null) {
             ErrorText(verifyState.error!!)
         }
-        Row {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 100.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
             // Back button
             Button(
                 onClick = {
@@ -108,14 +116,14 @@ fun VerifyScreen(
                     .testTag("loginVerifyNextButton")
                     .padding(top = 100.dp)
                     .width(150.dp),
-
+                enabled = code.value.isNotEmpty()
                 ) {
                 Text(text = "Next")
             }
         }
     }
     if (verifyState.verifyResponse != null) {
-        println("VerifyScreen verifyResponse: ${verifyState.verifyResponse}")
+        Log.i("VerifyScreen","VerifyScreen verifyResponse: ${verifyState.verifyResponse}")
         val intent = Intent(context, ProfileActivity::class.java)
         context.startActivity(intent)
     }

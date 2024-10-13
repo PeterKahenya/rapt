@@ -2,6 +2,7 @@ import datetime
 from enum import Enum
 from typing import List, Optional
 from uuid import UUID
+import uuid
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect, Depends
 from pydantic import UUID4
 import models
@@ -26,6 +27,7 @@ class SocketMessage(schemas.BaseModel): # for websocket messages both incoming a
     user: dict # user object
     obj: Optional[dict] = None # for chat messages
     timestamp: datetime.datetime = datetime.datetime.now(tz=datetime.timezone.utc)
+    message_id: Optional[str] = None
 
 class ConnectionManager:
     
@@ -49,7 +51,7 @@ class ConnectionManager:
         db.commit()
         db.refresh(user)
         user_dict = schemas.UserInDBBase.model_validate(user).model_dump()
-        socket_message = SocketMessage(type=MessageType.ONLINE, user=user_dict)
+        socket_message = SocketMessage(type=MessageType.ONLINE, user=user_dict, message_id=str(uuid.uuid4()))
         await self.broadcast(socket_message, room) # always be broadcasting
 
     async def disconnect(self, websocket: WebSocket, room: str, user: models.User, db: models.Session):
@@ -57,7 +59,8 @@ class ConnectionManager:
         user.last_seen = datetime.datetime.now(tz=datetime.timezone.utc)
         db.commit()
         db.refresh(user)
-        self.rooms[room].pop(str(user.id))
+        if str(user.id) in self.rooms[room]:
+            self.rooms[room].pop(str(user.id))
         if not self.rooms[room]:
             del self.rooms[room]
         user_dict = schemas.UserInDBBase.model_validate(user).model_dump()
@@ -65,9 +68,10 @@ class ConnectionManager:
         await self.broadcast(socket_message, room) # always be broadcasting        
 
     async def broadcast(self, message: SocketMessage, room: str):
-        logger.error(f"Broadcasting message {message.type} to room {room}")
+        if room in self.rooms:
+            print(f"{len(self.rooms[room].keys())} users in room {room}")
         for id,connection in self.rooms.get(room, {}).items():
-            logger.error(f"Broadcasting message {message.type} to room {room} id {id} and connection {connection}")
+            logger.error(f"Broadcasting message {message.type} to User {id}")
             await connection.send_json(message.model_dump(mode="json"))
 
 manager = ConnectionManager()
@@ -81,22 +85,22 @@ async def chatsocket(
     try:
         # connection logic
         room: models.ChatRoom = await crud.get_obj_or_404(db,models.ChatRoom,room_id)
-        logger.error(f"User {user.phone} is trying to connect to room {room.to_dict()}")
+        logger.debug(f"User {user.phone} is trying to connect to room {room_id}")
         if not room.is_member(user):
             logger.error(f"User {user.phone} is not a member of room {room_id}")
             await websocket.close()
+            return
         await manager.connect(websocket, room=room.socket_room_id, user=user, db=db)
         # chat logic        
         while True:
             data = await websocket.receive_json()
-            logger.error(f"User {user.phone} sent a message {data}")
             message = SocketMessage(**data)
             logger.error(f"User {user.phone} sent a message {message}")
             match message.type:
                 case MessageType.CHAT:
                     chat_create = schemas.ChatCreate(**message.obj, sender_id=user.id, room_id=room.id)
                     chat = await crud.create_chat(db,chat_create)
-                    socket_message = SocketMessage(type=MessageType.CHAT, user=message.user, obj=chat.to_dict())
+                    socket_message = SocketMessage(type=MessageType.CHAT, user=message.user, obj=chat.to_dict(), message_id=message.message_id)
                     await manager.broadcast(socket_message, room.socket_room_id)
                 case MessageType.READ:
                     chat: models.Chat = await crud.get_obj_or_None(db,models.Chat,UUID(message.obj["id"]))
@@ -107,7 +111,7 @@ async def chatsocket(
                         chat.is_read = True
                         db.commit()
                         db.refresh(chat)
-                    socket_message = SocketMessage(type=message.type, user=message.user, obj=chat.to_dict())
+                    socket_message = SocketMessage(type=message.type, user=message.user, obj=chat.to_dict(), message_id=message.message_id)
                     await manager.broadcast(socket_message, room.socket_room_id)
                 case _:
                     socket_message = SocketMessage(type=message.type, user=user.to_dict())
@@ -118,3 +122,7 @@ async def chatsocket(
     except HTTPException as e:
         logger.error(f"Room with id {room_id} not found")
         await websocket.close()
+    except Exception as e:
+        logger.error(e)
+        await websocket.close()
+        raise
