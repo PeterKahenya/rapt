@@ -10,3 +10,5 @@ requests
 pyjwt
 honeybadger
 fastapi[standard]
+coverage
+cryptography
