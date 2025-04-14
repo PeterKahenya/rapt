@@ -1,0 +1,12 @@
+sqlalchemy
+alembic
+pytest
+pytest-asyncio
+pydantic-settings
+faker
+PyMySQL
+nanoid
+requests
+pyjwt
+honeybadger
+fastapi[standard]
