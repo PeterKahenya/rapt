@@ -2,7 +2,6 @@ from pydantic_settings import BaseSettings
 import logging
 from honeybadger.contrib.logger import HoneybadgerHandler
 
-
 class AppSettings(BaseSettings):
     mysql_driver: str = "mysql+pymysql"
     mysql_host: str
