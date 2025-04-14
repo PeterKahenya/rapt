@@ -1,0 +1,6 @@
+sqlalchemy
+alembic
+pytest
+pytest-asyncio
+pydantic-settings
+faker
