@@ -41,6 +41,7 @@ def seed_db(db: Session):
         db.add(user)
     db.commit()
     # faker client apps
+    print("Seeding to add clientapps")
     for i in range(10):
         user = db.execute(select(models.User)).scalars().first()
         client_app = models.ClientApp(name=faker.word(),description=faker.word(),user_id=user.id)
