@@ -1,6 +1,7 @@
+from enum import Enum
 from pydantic import BaseModel,UUID4
 from typing import Any, List,Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 # common schemas
 class ListResponse(BaseModel):
@@ -213,5 +214,19 @@ class MediaInDBBase(ModelInDBBase):
     chat_id: UUID4
     # WARNING: chat object would lead to recursive error
 
-
+class MessageType(str, Enum):
+    ONLINE = "online" # user is online
+    OFFLINE = "offline" # user is offline
+    CHAT = "chat" # new chat
+    READ = "read" # the user has read the message
+    READING = "reading" # the user is 'reading' i.e they are not typing but are looking through your chats
+    AWAY = "away" # user is away from your chat but is online
+    TYPING = "typing" # user has the phone keyboard up or cursor is on chatbox
+    THINKING = "thinking" # user has the keyboad up or cursor on chatbox but they have not typed in a while (TODO: What's the approx. time)
+    
+class SocketMessage(BaseModel): # for websocket messages both incoming and outgoing
+    type: MessageType
+    user: dict # user object
+    obj: Optional[dict] = None # for chat messages
+    timestamp: datetime = datetime.now(tz=timezone.utc)
 
