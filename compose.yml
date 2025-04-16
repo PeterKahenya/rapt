@@ -7,7 +7,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
     ports:
-      - 9010:${MYSQL_PORT}
+      - ${EXT_MYSQL_PORT}:${MYSQL_PORT}
     volumes:
       - rapt_mysql_db_data:/var/local/mysql
       - rapt_mysql_db_config:/etc/mysql
@@ -23,6 +23,23 @@ services:
       - MYSQL_PASSWORD=${TEST_DATABASE_PASSWORD}
     ports:
       - 9011:${MYSQL_PORT}
+
+  rapt_service:
+    depends_on:
+      - rapt_db
+    restart: always
+    build:
+      context: ./service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - EXT_MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_HOST=rapt_db
+    ports:
+      - "${EXT_SERVICE_PORT}:${SERVICE_PORT}"
+    volumes:
+      - ./service/:/service/  
 
 volumes:
   rapt_mysql_db_data:

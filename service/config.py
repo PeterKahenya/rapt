@@ -6,6 +6,7 @@ class AppSettings(BaseSettings):
     mysql_driver: str = "mysql+pymysql"
     mysql_host: str
     mysql_port: int
+    ext_mysql_port: int
     mysql_user: str
     mysql_password: str
     mysql_database: str
@@ -36,6 +37,6 @@ logger.addHandler(hb_handler)
 
 
 def get_database_url():
-    return f"{settings.mysql_driver}://{settings.mysql_user}:{settings.mysql_password}@{settings.mysql_host}:{settings.mysql_port}/{settings.mysql_database}"
+    return f"{settings.mysql_driver}://{settings.mysql_user}:{settings.mysql_password}@{settings.mysql_host}:{settings.ext_mysql_port}/{settings.mysql_database}"
 
 DEFAULT_PERMISSIONS_CLASSES = ["create","read","update","delete"]
