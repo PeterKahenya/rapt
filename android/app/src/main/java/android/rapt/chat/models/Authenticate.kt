@@ -1,4 +1,4 @@
-package android.rapt.chat.data.models
+package android.rapt.chat.models
 
 import com.google.gson.annotations.SerializedName
 

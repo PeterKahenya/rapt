@@ -1,6 +1,6 @@
 
 
-package android.rapt.chat.data.models
+package android.rapt.chat.models
 
 import com.google.gson.annotations.SerializedName
 import retrofit2.http.Field
