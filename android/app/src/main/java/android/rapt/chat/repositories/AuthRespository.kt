@@ -1,16 +1,17 @@
-package android.rapt.chat.data.repositories
+package android.rapt.chat.repositories
 
 import android.rapt.chat.common.RaptConstants
-import android.rapt.chat.data.models.Auth
-import android.rapt.chat.data.models.LoginRequest
-import android.rapt.chat.data.models.LoginResponse
-import android.rapt.chat.data.models.RefreshRequest
-import android.rapt.chat.data.models.RefreshResponse
-import android.rapt.chat.data.models.VerifyRequest
-import android.rapt.chat.data.models.VerifyResponse
-import android.rapt.chat.data.models.toFieldMap
-import android.rapt.chat.data.sources.RaptAPI
-import android.rapt.chat.data.sources.RaptDatastore
+import android.rapt.chat.models.Auth
+import android.rapt.chat.models.LoginRequest
+import android.rapt.chat.models.LoginResponse
+import android.rapt.chat.models.RefreshRequest
+import android.rapt.chat.models.RefreshResponse
+import android.rapt.chat.models.VerifyRequest
+import android.rapt.chat.models.VerifyResponse
+import android.rapt.chat.models.toFieldMap
+import android.rapt.chat.sources.RaptAPI
+import android.rapt.chat.sources.RaptDatastore
+import javax.inject.Inject
 
 interface AuthRepository {
     suspend fun auth(): Auth?
@@ -19,7 +20,7 @@ interface AuthRepository {
     suspend fun refresh(refreshRequest: RefreshRequest): RefreshResponse
 }
 
-class AuthRepositoryImpl(
+class AuthRepositoryImpl @Inject constructor(
     private val api: RaptAPI, private val ds: RaptDatastore
 ) : AuthRepository {
     override suspend fun auth(): Auth? {
@@ -56,12 +57,14 @@ class AuthRepositoryImpl(
     override suspend fun verify(verifyRequest: VerifyRequest): VerifyResponse {
         val verifyResponse = api.verify(verifyRequest.toFieldMap())
         val user = api.getProfile("Bearer ${verifyResponse.accessToken}")
-        ds.saveAuth(Auth(
+        ds.saveAuth(
+            Auth(
             accessToken = verifyResponse.accessToken,
             phone = user.phone,
             userId = user.id,
-            expiresAt = System.currentTimeMillis() + (verifyResponse.expiresIn * 60 * 1000)
-        ))
+            expiresAt = System.currentTimeMillis() + (verifyResponse.expiresIn * 1000)
+        )
+        )
         return verifyResponse
     }
 
