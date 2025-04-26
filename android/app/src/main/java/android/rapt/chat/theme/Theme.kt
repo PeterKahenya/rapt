@@ -1,4 +1,4 @@
-package android.rapt.chat.ui.theme
+package android.rapt.chat.theme
 
 import android.app.Activity
 import android.os.Build
