@@ -2,6 +2,7 @@ package android.rapt.chat.screens
 
 import android.content.Context
 import android.content.Intent
+import android.rapt.chat.ChatActivity
 import android.rapt.chat.ChatsListActivity
 import android.rapt.chat.sources.DBContact
 import android.rapt.chat.viewmodels.ContactsViewModel
@@ -130,7 +131,9 @@ fun ContactItem(contact: DBContact, context: Context) {
             .fillMaxWidth()
             .background(Color.LightGray),
         onClick = {
-
+            val intent = Intent(context, ChatActivity::class.java)
+            intent.putExtra("contactId", contact.contactId)
+            context.startActivity(intent)
         }
     ) {
         Row (
