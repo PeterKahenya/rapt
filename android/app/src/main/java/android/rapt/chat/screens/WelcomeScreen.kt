@@ -1,12 +1,11 @@
 package android.rapt.chat.screens
 
 import android.content.Intent
+import android.rapt.chat.ChatsListActivity
 import android.rapt.chat.LoginActivity
-import android.rapt.chat.ProfileActivity
 import android.rapt.chat.R
 import android.rapt.chat.viewmodels.WelcomeViewModel
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,8 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.BlendMode.Companion.Color
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -41,8 +38,7 @@ fun WelcomeScreen(
     val context = LocalContext.current
 
     if (authStatus.isAuthenticated){
-        println("Authenticated")
-        LocalContext.current.startActivity(Intent(LocalContext.current, ProfileActivity::class.java))
+        LocalContext.current.startActivity(Intent(LocalContext.current, ChatsListActivity::class.java))
     }
 
     Box(

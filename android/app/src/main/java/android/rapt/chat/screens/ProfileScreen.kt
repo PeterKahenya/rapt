@@ -1,6 +1,7 @@
 package android.rapt.chat.screens
 
 import android.content.Intent
+import android.rapt.chat.ChatsListActivity
 import android.rapt.chat.models.User
 import android.rapt.chat.viewmodels.ProfileViewModel
 import androidx.compose.foundation.layout.Arrangement
@@ -57,6 +58,7 @@ fun ProfileScreen(
 @Composable
 fun ProfileContent(profile: User, profileViewModel: ProfileViewModel) {
     val name = remember { mutableStateOf(profile.name) }
+    val context = LocalContext.current
     Avatar(profile)
     Spacer(modifier = Modifier.height(16.dp))
     TextField(value = name.value, onValueChange = { name.value = it }, label = { Text("Name") })
@@ -75,7 +77,7 @@ fun ProfileContent(profile: User, profileViewModel: ProfileViewModel) {
     }
     Spacer(modifier = Modifier.height(8.dp))
     Button(onClick = {
-
+        context.startActivity(Intent(context, ChatsListActivity::class.java))
     }) {
         Text("Chats")
     }
