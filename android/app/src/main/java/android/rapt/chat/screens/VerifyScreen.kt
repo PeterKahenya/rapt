@@ -2,6 +2,7 @@ package android.rapt.chat.screens
 
 import android.content.Intent
 import android.rapt.chat.LoginActivity
+import android.rapt.chat.ProfileActivity
 import android.rapt.chat.R
 import android.rapt.chat.viewmodels.VerifyViewModel
 import androidx.compose.foundation.Image
@@ -40,6 +41,11 @@ fun VerifyScreen(
     val verifyState by verifyViewModel.state.collectAsStateWithLifecycle()
     val code: MutableState<String> = remember { mutableStateOf("") }
     val context = LocalContext.current
+
+    if (verifyState.verifyResponse != null) {
+        val intent = Intent(context, ProfileActivity::class.java)
+        context.startActivity(intent)
+    }
 
     Column(
         horizontalAlignment = Alignment.Start,
