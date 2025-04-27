@@ -2,7 +2,7 @@ package android.rapt.chat
 
 import android.os.Bundle
 import android.rapt.chat.screens.VerifyScreen
-import android.rapt.chat.ui.theme.RaptTheme
+import android.rapt.chat.theme.RaptTheme
 import android.rapt.chat.viewmodels.VerifyViewModel
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent

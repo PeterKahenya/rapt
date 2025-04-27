@@ -2,6 +2,7 @@ package android.rapt.chat.screens
 
 import android.content.Intent
 import android.rapt.chat.LoginActivity
+import android.rapt.chat.ProfileActivity
 import android.rapt.chat.R
 import android.rapt.chat.viewmodels.WelcomeViewModel
 import androidx.compose.foundation.Image
@@ -38,6 +39,12 @@ fun WelcomeScreen(
 ){
     val authStatus by viewModel.authState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    if (authStatus.isAuthenticated){
+        println("Authenticated")
+        LocalContext.current.startActivity(Intent(LocalContext.current, ProfileActivity::class.java))
+    }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
