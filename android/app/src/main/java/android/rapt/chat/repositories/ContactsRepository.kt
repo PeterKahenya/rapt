@@ -25,21 +25,22 @@ class ContactsRepositoryImpl @Inject constructor(
             val auth = authRepository.auth() ?: throw Exception("No auth found")
             // upload contacts to api that are in phone but not in api
             val phoneContacts = contentProvider.getContacts()
-            val apiContacts = api.getContacts(accessToken = "Bearer ${auth.accessToken}", userId = auth.userId)
+            var apiContacts = api.getContacts(accessToken = "Bearer ${auth.accessToken}", userId = auth.userId)
             val apiUploadList = mutableListOf<ContactUpload>()
             for (phoneContact in phoneContacts){
                 if (phoneContact.phone !in apiContacts.map { it.phone }){
                     apiUploadList.add(ContactUpload(name = phoneContact.name, phone = phoneContact.phone))
                 }
             }
-            val updatedAPIContacts = api.addContacts(
+            api.addContacts(
                 accessToken = "Bearer ${auth.accessToken}",
                 userId = auth.userId,
                 addContactsRequest = apiUploadList
             )
             // any contact not in the db should be added
             val dbContacts = contactDB.getAll()
-            for (apiContact in updatedAPIContacts) {
+            apiContacts = api.getContacts(accessToken = "Bearer ${auth.accessToken}", userId = auth.userId)
+            for (apiContact in apiContacts) {
                 if (apiContact.phone !in dbContacts.map { it.phone }) {
                     contactDB.insert(
                         DBContact(
@@ -54,7 +55,6 @@ class ContactsRepositoryImpl @Inject constructor(
             }
             return contactDB.getAll()
         } catch (ex: Exception){
-            Log.d("ContactsRepositoryImpl sync", "Error syncing contacts $ex")
             return contactDB.getAll()
         }
     }
