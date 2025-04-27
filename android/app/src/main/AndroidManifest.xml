@@ -14,8 +14,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Rapt"
-        tools:targetApi="31"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        tools:targetApi="31">
+        <activity
+            android:name=".VerifyActivity"
+            android:exported="false"
+            android:label="@string/title_activity_verify"
+            android:theme="@style/Theme.Rapt" />
         <activity
             android:name=".LoginActivity"
             android:exported="false"

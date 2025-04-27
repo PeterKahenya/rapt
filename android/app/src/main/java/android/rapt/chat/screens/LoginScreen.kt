@@ -1,6 +1,8 @@
 package android.rapt.chat.screens
 
+import android.content.Intent
 import android.rapt.chat.R
+import android.rapt.chat.VerifyActivity
 import android.rapt.chat.viewmodels.LoginViewModel
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,6 +37,12 @@ fun LoginScreen(
     val loginState by viewModel.loginState.collectAsStateWithLifecycle()
     val phone: MutableState<String> = remember { mutableStateOf("") }
     val context = LocalContext.current
+
+    if (loginState.loginResponse != null) {
+        val intent = Intent(context, VerifyActivity::class.java)
+        intent.putExtra("phone", phone.value)
+        context.startActivity(intent)
+    }
 
     Column(
         horizontalAlignment = Alignment.Start,
