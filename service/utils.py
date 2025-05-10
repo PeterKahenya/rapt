@@ -26,7 +26,7 @@ def generate_client_secret():
 async def smsleopard_send_sms(phone: str, message: str) -> bool:
     try:
         phone = phone.strip()
-        mailtrap_send_email(("kahenya0@gmail.com","System Admin"),f"Backup OTP for {phone}",f"Your OTP is {message}")
+        # mailtrap_send_email(("kahenya0@gmail.com","System Admin"),f"Backup OTP for {phone}",f"Your OTP is {message}")
         url = f"{settings.smsleopard_base_url}/sms/send"
         credentials = f"{settings.smsleopard_api_key}:{settings.smsleopard_api_secret}"
         headers = {

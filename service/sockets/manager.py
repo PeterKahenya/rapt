@@ -3,7 +3,7 @@ from config import logger
 import datetime
 import models
 import schemas
-
+import uuid
 
 class ConnectionManager:
     
@@ -27,7 +27,7 @@ class ConnectionManager:
         db.commit()
         db.refresh(user)
         user_dict = schemas.UserInDBBase.model_validate(user).model_dump()
-        socket_message = schemas.SocketMessage(type=schemas.MessageType.ONLINE, user=user_dict)
+        socket_message = schemas.SocketMessage(type=schemas.MessageType.ONLINE, user=user_dict, id=uuid.uuid4())
         await self.broadcast(socket_message, room) # always be broadcasting
 
     async def disconnect(self, websocket: WebSocket, room: str, user: models.User, db: models.Session):
@@ -39,7 +39,7 @@ class ConnectionManager:
         if not self.rooms[room]:
             del self.rooms[room]
         user_dict = schemas.UserInDBBase.model_validate(user).model_dump()
-        socket_message = schemas.SocketMessage(type=schemas.MessageType.OFFLINE, user=user_dict)
+        socket_message = schemas.SocketMessage(type=schemas.MessageType.OFFLINE, user=user_dict, id=uuid.uuid4())
         await self.broadcast(socket_message, room) # always be broadcasting        
 
     async def broadcast(self, message: schemas.SocketMessage, room: str):

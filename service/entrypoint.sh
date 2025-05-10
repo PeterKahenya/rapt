@@ -29,4 +29,4 @@ echo "----------INITIALIZE DATABASE------------------"
 python init.py
 
 echo "------STARTING GUNICORN AT 0.0.0.0:${SERVICE_PORT}--"
-uvicorn main:app --host 0.0.0.0 --port "$SERVICE_PORT" --workers 4
+uvicorn main:app --host 0.0.0.0 --port "$SERVICE_PORT" --workers 4 --reload

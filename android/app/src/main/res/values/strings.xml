@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">Rapt</string>
     <string name="title_activity_login">LoginActivity</string>
+    <string name="title_activity_verify">VerifyActivity</string>
+    <string name="title_activity_profile">ProfileActivity</string>
+    <string name="title_activity_chats_list">ChatsListActivity</string>
+    <string name="title_activity_contacts">ContactsActivity</string>
+    <string name="title_activity_chat">ChatActivity</string>
 </resources>

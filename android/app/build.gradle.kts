@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    kotlin("plugin.serialization") version "2.0.21"
 }
 
 android {
@@ -93,6 +94,13 @@ dependencies {
     // retrofit2 for api calls and gson for parsing json
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    // ktor websockets library
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.websockets)
+    implementation(libs.ktor.client.serialization)
+    implementation(libs.ktor.client.logging)
+    implementation(libs.kotlinx.serialization.json)
     // android datastore for storing auth data
     implementation(libs.androidx.datastore.preferences)
     // Room

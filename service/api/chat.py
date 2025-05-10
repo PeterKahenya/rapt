@@ -22,9 +22,7 @@ async def create_room(
     # check if the current user is a member of the room_create members list using user id
     if user.id not in [u.id for u in room_create.members]:
         room_create.members.append(schemas.ModelBase(id=user.id))
-    print(room_create.members)
     members = [await crud.get_obj_or_404(db,models.User,u.id) for u in room_create.members]
-    print(members)
     chatrooms = db.execute(select(models.ChatRoom)).scalars().all()
     chatroom = next((room for room in chatrooms if set(room.members) == set(members)), None)
     if not chatroom:

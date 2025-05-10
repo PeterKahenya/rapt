@@ -39,7 +39,7 @@ async def chatsocket(
                 case schemas.MessageType.CHAT:
                     chat_create = schemas.ChatCreate(**message.obj, sender_id=user.id, room_id=room.id)
                     chat = await crud.create_chat(db,chat_create)
-                    socket_message = schemas.SocketMessage(type=schemas.MessageType.CHAT, user=message.user, obj=chat.to_dict())
+                    socket_message = schemas.SocketMessage(type=schemas.MessageType.CHAT, user=message.user, obj=chat.to_dict(), id=message.id)
                     await manager.broadcast(socket_message, room.socket_room_id)
                 case schemas.MessageType.READ:
                     chat: models.Chat = await crud.get_obj_or_None(db,models.Chat,UUID(message.obj["id"]))
