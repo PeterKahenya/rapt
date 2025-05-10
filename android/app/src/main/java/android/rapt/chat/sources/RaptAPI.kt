@@ -1,5 +1,8 @@
 package android.rapt.chat.sources
 
+import android.rapt.chat.models.ChatRoom
+import android.rapt.chat.models.ChatRoomCreate
+import android.rapt.chat.models.ChatRoomUpdate
 import retrofit2.http.*
 import android.rapt.chat.models.Contact
 import android.rapt.chat.models.ContactUpdate
@@ -60,4 +63,37 @@ interface RaptAPI {
         @Path("userId") userId: String,
         @Body updateContactsRequest: List<ContactUpdate>
     ): List<Contact>
+
+    // get chat rooms
+    @GET("chat/rooms")
+    suspend fun getChatRooms(@Header("Authorization") accessToken: String): List<ChatRoom>
+
+    // create chat room
+    @POST("chat/rooms")
+    suspend fun createChatRoom(
+        @Header("Authorization") accessToken: String,
+        @Body chatRoomRequest: ChatRoomCreate
+    ): ChatRoom
+
+    // get chat room
+    @GET("chat/rooms/{roomId}")
+    suspend fun getChatRoom(
+        @Path("roomId") roomId: String,
+        @Header("Authorization") accessToken: String
+    ): ChatRoom
+
+    // update chat room
+    @PUT("chat/rooms/{roomId}")
+    suspend fun updateChatRoom(
+        @Path("roomId") roomId: String,
+        @Header("Authorization") accessToken: String,
+        @Body chatRoomRequest: ChatRoomUpdate
+    ): ChatRoom
+
+    // delete chat room
+    @DELETE("chat/rooms/{roomId}")
+    suspend fun deleteChatRoom(
+        @Path("roomId") roomId: String,
+        @Header("Authorization") accessToken: String
+    ): Nothing
 }
