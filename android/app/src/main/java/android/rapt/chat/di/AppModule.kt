@@ -5,16 +5,20 @@ import android.os.Build
 import android.rapt.chat.common.RaptConstants
 import android.rapt.chat.repositories.AuthRepository
 import android.rapt.chat.repositories.AuthRepositoryImpl
+import android.rapt.chat.repositories.ChatRepository
+import android.rapt.chat.repositories.ChatRepositoryImpl
 import android.rapt.chat.repositories.ContactsRepository
 import android.rapt.chat.repositories.ContactsRepositoryImpl
 import android.rapt.chat.repositories.ProfileRepository
 import android.rapt.chat.repositories.ProfileRepositoryImpl
+import android.rapt.chat.sources.ChatRoomDao
 import android.rapt.chat.sources.ContactDao
 import android.rapt.chat.sources.RaptAPI
 import android.rapt.chat.sources.RaptContentProvider
 import android.rapt.chat.sources.RaptDataStoreImpl
 import android.rapt.chat.sources.RaptDatabase
 import android.rapt.chat.sources.RaptDatastore
+import android.rapt.chat.sources.RaptSocket
 import androidx.annotation.RequiresApi
 import androidx.room.Room
 import dagger.Module
@@ -22,6 +26,15 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.request.header
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -42,11 +55,34 @@ object AppModule {
             .readTimeout(Duration.ofSeconds(30))
             .build()
         return Retrofit.Builder()
-            .baseUrl(RaptConstants.BASE_URL)
+            .baseUrl("http://${RaptConstants.BASE_URL}")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(RaptAPI::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideKtorHttpClient(): HttpClient {
+        return HttpClient(CIO) {
+            install(WebSockets) {
+                pingInterval = 20_000 // ping server every 20s to keep connection alive
+                maxFrameSize = Long.MAX_VALUE
+            }
+            install(HttpTimeout) {
+                requestTimeoutMillis = 30_000
+                connectTimeoutMillis = 10_000
+                socketTimeoutMillis = 10_000
+            }
+            install(DefaultRequest) {
+                header(HttpHeaders.ContentType, ContentType.Application.Json)
+            }
+            install(HttpRequestRetry) {
+                retryOnServerErrors(maxRetries = 3)
+                exponentialDelay()
+            }
+        }
     }
 
     @Provides
@@ -64,6 +100,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideContactDao(db: RaptDatabase): ContactDao = db.contactDao()
+
+    @Provides
+    @Singleton
+    fun provideChatRoomDao(db: RaptDatabase): ChatRoomDao = db.chatRoomDao()
 
     @Provides
     @Singleton
@@ -95,5 +135,26 @@ object AppModule {
         authRepository: AuthRepository
     ): ProfileRepository {
         return ProfileRepositoryImpl(api, authRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRaptSocket(
+        httpClient: HttpClient,
+        authRepository: AuthRepository
+    ): RaptSocket {
+        return RaptSocket(httpClient, authRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideChatRepository(
+        api: RaptAPI,
+        chatRoomDao: ChatRoomDao,
+        authRepository: AuthRepository,
+        socket: RaptSocket,
+        profileRepository: ProfileRepository
+    ): ChatRepository {
+        return ChatRepositoryImpl(api, chatRoomDao, authRepository, socket, profileRepository)
     }
 }
