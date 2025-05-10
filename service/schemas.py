@@ -225,6 +225,7 @@ class MessageType(str, Enum):
     THINKING = "thinking" # user has the keyboad up or cursor on chatbox but they have not typed in a while (TODO: What's the approx. time)
     
 class SocketMessage(BaseModel): # for websocket messages both incoming and outgoing
+    id: UUID4
     type: MessageType
     user: dict # user object
     obj: Optional[dict] = None # for chat messages
