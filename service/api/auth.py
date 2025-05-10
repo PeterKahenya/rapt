@@ -21,7 +21,8 @@ async def login(db: Session = Depends(get_db), user: models.User = Depends(get_o
     try:
         user = await user.create_verification_code(db=db,code_length=settings.verification_code_length,code_expiry_seconds=settings.verification_code_expiry_seconds)
         message = f"Your rapt verification code is {user.phone_verification_code} please enter it to verify your phone number"
-        await utils.smsleopard_send_sms(phone=user.phone, message=message)
+        print(f"User {user.phone} code {user.phone_verification_code}")
+        # await utils.smsleopard_send_sms(phone=user.phone, message=message)
         return {"message":"SMS verification code sent", "success":True, "phone":user.phone}
     except Exception as e:
         logger.error(f"Login Error: {str(e)}")
@@ -40,7 +41,7 @@ async def verify(db: Session = Depends(get_db), user: models.User = Depends(phon
             user.roles.append(chatter_role)  # by default a user is a chatter
         db.commit()
         db.refresh(user)
-        return schemas.AccessToken(access_token=access_token,token_type="Bearer",expires_in=settings.access_token_expiry_seconds*60)
+        return schemas.AccessToken(access_token=access_token,token_type="Bearer",expires_in=settings.access_token_expiry_seconds)
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise HTTPException(status_code=500,detail={"message":"An unexpected error occurred"})
@@ -71,7 +72,7 @@ async def refresh_token(access_token: Annotated[str,Form()], db: Session = Depen
                 access_token = user.create_jwt_token(app, settings.jwt_secret_key,settings.jwt_algorithm,settings.access_token_expiry_seconds)
                 db.commit()
                 db.refresh(user)
-                return schemas.AccessToken(access_token=access_token,token_type="Bearer",expires_in=settings.access_token_expiry_seconds*60)
+                return schemas.AccessToken(access_token=access_token,token_type="Bearer",expires_in=settings.access_token_expiry_seconds)
     except HTTPException as e:
         logger.warning(f"Error: {str(e)}")
         raise e
