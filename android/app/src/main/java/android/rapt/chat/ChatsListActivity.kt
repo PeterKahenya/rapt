@@ -5,11 +5,13 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.rapt.chat.screens.ChatsListScreen
 import android.rapt.chat.theme.RaptTheme
+import android.rapt.chat.viewmodels.ChatsListViewModel
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -20,7 +22,8 @@ class ChatsListActivity : ComponentActivity() {
         requestPermission()
         setContent {
             RaptTheme {
-                ChatsListScreen()
+                val viewModel = hiltViewModel<ChatsListViewModel>()
+                ChatsListScreen(viewModel)
             }
         }
     }

@@ -21,7 +21,7 @@ data class DBContact(
 
 @Entity
 data class DBChatRoom(
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     @ColumnInfo(name = "chatroom_id") val chatRoomId: String
 )
 
@@ -56,6 +56,22 @@ fun DBChat.toSocketMessage(): SocketMessage {
         timestamp = "${this.timestamp}"
     )
 }
+
+data class DBChatRoomWithMembersAndMessages(
+    @Embedded
+    val room: DBChatRoom,
+    @Relation(
+        parentColumn = "chatroom_id",
+        entityColumn = "contact_id",
+        associateBy = Junction(DBChatRoomMember::class)
+    )
+    val members: List<DBContact>,
+    @Relation(
+        parentColumn = "chatroom_id",
+        entityColumn = "chatroom_id",
+    )
+    val chats: List<DBChat>
+)
 
 /* DAOs */
 @Dao
@@ -92,6 +108,10 @@ interface ChatRoomDao{
     @Query("SELECT * FROM dbchatroom")
     suspend fun getAllChatRooms(): List<DBChatRoom>
 
+    @Transaction
+    @Query("SELECT * FROM dbchatroom")
+    suspend fun getChatRoomsWithMembersAndMessages(): List<DBChatRoomWithMembersAndMessages>
+
     @Query("SELECT * FROM dbchatroom WHERE chatroom_id = :chatRoomId")
     suspend fun getChatRoomById(chatRoomId: String): DBChatRoom?
 
@@ -113,7 +133,7 @@ interface ChatRoomDao{
     @Insert(DBChat::class)
     suspend fun insertMessage(chatMessage: DBChat)
 
-    @Query("SELECT * FROM dbchat WHERE dbchat.id = :chatId")
+    @Query("SELECT * FROM dbchat WHERE dbchat.chatId = :chatId")
     suspend fun getMessageById(chatId: String): DBChat?
 
     @Query("SELECT * FROM dbchat WHERE dbchat.socket_message_id = :socketMessageId LIMIT 1")

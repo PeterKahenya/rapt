@@ -1,20 +1,16 @@
 package android.rapt.chat.repositories
 
 import android.rapt.chat.common.RaptConstants
-import android.rapt.chat.models.ChatObj
 import android.rapt.chat.models.ChatRoom
 import android.rapt.chat.models.ChatRoomCreate
 import android.rapt.chat.models.MemberObj
-import android.rapt.chat.models.MessageType
 import android.rapt.chat.models.SocketMessage
-import android.rapt.chat.models.UserObj
 import android.rapt.chat.sources.ChatRoomDao
 import android.rapt.chat.sources.DBChat
 import android.rapt.chat.sources.DBChatRoom
 import android.rapt.chat.sources.DBChatRoomMember
 import android.rapt.chat.sources.RaptAPI
 import android.rapt.chat.sources.RaptSocket
-import android.rapt.chat.sources.toSocketMessage
 import kotlinx.coroutines.flow.MutableSharedFlow
 import java.util.UUID
 import javax.inject.Inject
@@ -39,7 +35,7 @@ class ChatRepositoryImpl @Inject constructor(
         val dbChatRoom = if ( chatRoomDao.getChatRoomById(apiChatRoom.id) != null)  {
             chatRoomDao.getChatRoomById(apiChatRoom.id)?: throw Exception("Chat room not found")
         } else {
-            chatRoomDao.insertChatRoom(DBChatRoom(apiChatRoom.id))
+            chatRoomDao.insertChatRoom(DBChatRoom(chatRoomId = apiChatRoom.id))
             chatRoomDao.getChatRoomById(apiChatRoom.id)?: throw Exception("Chat room not found")
         }
         for (member in apiChatRoom.members) {
@@ -59,7 +55,7 @@ class ChatRepositoryImpl @Inject constructor(
             val auth = authRepository.auth() ?: throw Exception("Not authenticated")
             val apiChatRoom =  api.createChatRoom(
                 accessToken = "Bearer ${auth.accessToken}",
-                ChatRoomCreate(members = contactIds.map { MemberObj(id = it) } + MemberObj(id = profileRepository.getProfile().id))
+                ChatRoomCreate(members = contactIds.map { MemberObj(id = it, name = "", phone = "") } + MemberObj(id = profileRepository.getProfile().id, name = "", phone = ""))
             )
             val dbChatRoom = this.saveChatroom(apiChatRoom)
             return dbChatRoom

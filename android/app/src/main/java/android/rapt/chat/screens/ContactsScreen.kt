@@ -106,13 +106,6 @@ fun ContactsScreen(viewModel: ContactsViewModel) {
                                 thickness = 0.5.dp,
                                 color = Color.Gray
                             )
-                        }else {
-                            ContactItem(contact, context)
-                            HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = 8.dp),
-                                thickness = 0.5.dp,
-                                color = Color.Gray
-                            )
                         }
                     }
                 }
