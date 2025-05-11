@@ -44,6 +44,9 @@ class ConnectionManager:
 
     async def broadcast(self, message: schemas.SocketMessage, room: str):
         logger.error(f"Broadcasting message {message.type} to room {room}")
-        for user_id,connection in self.rooms.get(room, {}).items():
-            logger.error(f"Broadcasting message {message.type} to room {room} user_id {user_id} and connection {connection}")
-            await connection.send_json(message.model_dump(mode="json"))
+        for user_id, connection in list(self.rooms.get(room, {}).items()):
+            try:
+                logger.error(f"Broadcasting message {message.type} to room {room} user_id {user_id} and connection {connection}")
+                await connection.send_json(message.model_dump(mode="json"))
+            except Exception as e:
+                logger.error(f"Failed to send message to {user_id} in room {room}: {e}")
