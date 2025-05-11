@@ -7,6 +7,8 @@ import android.rapt.chat.repositories.AuthRepository
 import android.rapt.chat.repositories.AuthRepositoryImpl
 import android.rapt.chat.repositories.ChatRepository
 import android.rapt.chat.repositories.ChatRepositoryImpl
+import android.rapt.chat.repositories.ChatsRepository
+import android.rapt.chat.repositories.ChatsRepositoryImpl
 import android.rapt.chat.repositories.ContactsRepository
 import android.rapt.chat.repositories.ContactsRepositoryImpl
 import android.rapt.chat.repositories.ProfileRepository
@@ -156,5 +158,16 @@ object AppModule {
         profileRepository: ProfileRepository
     ): ChatRepository {
         return ChatRepositoryImpl(api, chatRoomDao, authRepository, socket, profileRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideChatsRepository(
+        api: RaptAPI,
+        chatRoomDao: ChatRoomDao,
+        contactDao: ContactDao,
+        authRepository: AuthRepository
+    ): ChatsRepository {
+        return ChatsRepositoryImpl(api, chatRoomDao, contactDao, authRepository)
     }
 }
