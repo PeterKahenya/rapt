@@ -53,6 +53,7 @@ fun ChatScreen(
     contactId: String
 ){
     val chatState by chatViewModel.state.collectAsStateWithLifecycle()
+    val connectionStatus by chatViewModel.connectionStatus.collectAsStateWithLifecycle()
     val contact = chatState.members.find { it.contactId == contactId }
     Log.i("ChatScreen", "Contact: $contact")
     if (chatState.isLoading) {
@@ -72,6 +73,7 @@ fun ChatScreen(
                     Column {
                         contact?.name?.let { Text(text = it, style = MaterialTheme.typography.titleLarge) }
                         Text(text = "Last Seen ${contact?.lastSeen?: "Never"}",style = MaterialTheme.typography.bodySmall)
+                        Text(text = "Connection Status: $connectionStatus", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             )
