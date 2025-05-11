@@ -29,7 +29,7 @@ class ContactsRepositoryImpl @Inject constructor(
             val apiUploadList = mutableListOf<ContactUpload>()
             for (phoneContact in phoneContacts){
                 if (phoneContact.phone !in apiContacts.map { it.phone }){
-                    apiUploadList.add(ContactUpload(name = phoneContact.name, phone = phoneContact.phone))
+                    apiUploadList.add(ContactUpload(name = phoneContact.name, phone = phoneContact.phone.replace(" ", "").removePrefix("+")))
                 }
             }
             api.addContacts(

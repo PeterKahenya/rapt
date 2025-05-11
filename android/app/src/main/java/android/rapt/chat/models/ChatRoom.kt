@@ -3,7 +3,9 @@ package android.rapt.chat.models
 import com.google.gson.annotations.SerializedName
 
 data class MemberObj(
-    val id: String
+    val id: String,
+    val name: String,
+    val phone: String
 )
 
 data class ChatRoom(
