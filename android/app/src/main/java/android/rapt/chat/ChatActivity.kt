@@ -7,7 +7,6 @@ import android.rapt.chat.viewmodels.ChatViewModel
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Text
 import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,8 +24,11 @@ class ChatActivity : ComponentActivity() {
                 if (contactId != null) {
                     viewModel.setupChat(contactId, roomId)
                     ChatScreen(viewModel, contactId)
-                }else{
-                    Text(text = "Invalid Contact ID")
+                }else if (roomId != null){
+                    viewModel.setupChat("", roomId)
+                    ChatScreen(viewModel, "")
+                } else {
+                    Text("No contactId or roomId provided")
                 }
             }
         }
