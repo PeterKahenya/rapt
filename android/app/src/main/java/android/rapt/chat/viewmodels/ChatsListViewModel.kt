@@ -1,8 +1,7 @@
 package android.rapt.chat.viewmodels
 
-import android.rapt.chat.repositories.ContactsRepository
-import android.rapt.chat.sources.DBContact
-import android.util.Log
+import android.rapt.chat.repositories.ChatsRepository
+import android.rapt.chat.sources.DBChatRoomWithMembersAndMessages
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -15,32 +14,32 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import javax.inject.Inject
 
-data class ContactsState(
-    var contacts: List<DBContact> = emptyList(),
+data class ChatsListState(
+    var rooms: List<DBChatRoomWithMembersAndMessages> = emptyList(),
     var isLoading: Boolean = false,
     var error: String? = null
 )
 
 @HiltViewModel
-class ContactsViewModel @Inject constructor(
-    private val contactsRepository: ContactsRepository
+class ChatsListViewModel @Inject constructor(
+    private val chatsRepository: ChatsRepository
 ) : ViewModel() {
-    private val _state = MutableStateFlow(ContactsState())
+    private val _state = MutableStateFlow(ChatsListState())
     val state = _state.asStateFlow()
 
     init {
-        syncContacts()
+        syncChatRooms()
     }
 
-    private fun syncContacts() {
+    private fun syncChatRooms() {
         viewModelScope.launch {
             try {
                 _state.update {
                     it.copy(isLoading = true, error = null)
                 }
-                val dbContacts = contactsRepository.sync()
+                val dbChatRooms = chatsRepository.sync()
                 _state.update {
-                    it.copy(contacts = dbContacts, isLoading = false, error = null)
+                    it.copy(rooms = dbChatRooms, isLoading = false, error = null)
                 }
             } catch (e: HttpException) {
                 val errorResponse: ErrorResponse?
