@@ -11,13 +11,14 @@ import android.rapt.chat.sources.DBChatRoom
 import android.rapt.chat.sources.DBChatRoomMember
 import android.rapt.chat.sources.RaptAPI
 import android.rapt.chat.sources.RaptSocket
+import android.rapt.chat.viewmodels.ConnectionStatus
 import kotlinx.coroutines.flow.MutableSharedFlow
 import java.util.UUID
 import javax.inject.Inject
 
 interface ChatRepository{
     suspend fun createChatRoom(contactIds: List<String>): DBChatRoom
-    suspend fun initializeChatSocket(roomId: String, messageFlow: MutableSharedFlow<SocketMessage>)
+    suspend fun initializeChatSocket(roomId: String, messageFlow: MutableSharedFlow<SocketMessage>, connectionStatusFlow: MutableSharedFlow<ConnectionStatus>)
     suspend fun sendMessage(socketMessage: SocketMessage)
     suspend fun saveChat(message: String, roomId: String): DBChat
 }
@@ -64,8 +65,8 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun initializeChatSocket(roomId: String, messageFlow: MutableSharedFlow<SocketMessage>) {
-        return socket.connect("ws://${RaptConstants.BASE_URL}chatsocket/$roomId", messageFlow)
+    override suspend fun initializeChatSocket(roomId: String, messageFlow: MutableSharedFlow<SocketMessage>, connectionStatusFlow: MutableSharedFlow<ConnectionStatus>) {
+        return socket.connect("ws://${RaptConstants.BASE_URL}chatsocket/$roomId", messageFlow, connectionStatusFlow)
     }
 
     override suspend fun saveChat(message: String, roomId: String): DBChat {

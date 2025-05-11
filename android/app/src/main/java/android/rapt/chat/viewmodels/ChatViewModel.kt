@@ -19,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -28,12 +29,19 @@ import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
 
+sealed class ConnectionStatus {
+    data object Connected : ConnectionStatus()
+    data object Reconnecting : ConnectionStatus()
+    data object Disconnected : ConnectionStatus()
+}
+
 data class ChatState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val chatRoom: DBChatRoom? = null,
     val messages: MutableList<DBChat> = mutableListOf(),
-    val members: List<DBContact> = emptyList()
+    val members: List<DBContact> = emptyList(),
+    val connectionStatus: ConnectionStatus = ConnectionStatus.Disconnected
 )
 
 @HiltViewModel
@@ -46,6 +54,8 @@ class ChatViewModel @Inject constructor(
     private val _state = MutableStateFlow(ChatState())
     val state = _state.asStateFlow()
     private val _messagesFlow = MutableSharedFlow<SocketMessage>()
+    private val _connectionStatusFlow = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Disconnected)
+    val connectionStatus: StateFlow<ConnectionStatus> = _connectionStatusFlow.asStateFlow()
 
     private fun observeMessages(roomId: String){
         viewModelScope.launch {
@@ -100,6 +110,16 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    private fun observeConnectionStatus(){
+        viewModelScope.launch {
+            _connectionStatusFlow.collectLatest { connectionStatus ->
+                _state.update {
+                    it.copy(connectionStatus = connectionStatus)
+                }
+            }
+        }
+    }
+
     fun setupChat(contactId: String, roomId: String?){
         viewModelScope.launch {
             try {
@@ -115,6 +135,7 @@ class ChatViewModel @Inject constructor(
                 val messages = chatRoom?.let { chatRoomDao.getChatRoomMessages(it.chatRoomId) }
                 if (chatRoom != null) {
                     observeMessages(chatRoom.chatRoomId)
+                    observeConnectionStatus()
                 }
                 _state.update {
                     it.copy(
@@ -124,7 +145,7 @@ class ChatViewModel @Inject constructor(
                         chatRoom = chatRoom
                     )
                 }
-                chatRoom?.let { chatRepository.initializeChatSocket(it.chatRoomId, _messagesFlow) }
+                chatRoom?.let { chatRepository.initializeChatSocket(it.chatRoomId, _messagesFlow, _connectionStatusFlow) }
             } catch (e: IOException) {
                 Log.e("ChatViewModel setupChat","IOException: ${e.localizedMessage ?: "Could not reach server. Check your internet connection"}")
                 _state.update {
